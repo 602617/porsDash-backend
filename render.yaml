@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: porsdash-backend
+    env: java
+    buildCommand: ./mvnw clean install
+    startCommand: java -jar target/demo-0.0.1-SNAPSHOT.jar
