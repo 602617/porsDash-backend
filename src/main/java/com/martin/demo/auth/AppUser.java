@@ -1,6 +1,13 @@
 package com.martin.demo.auth;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.martin.demo.model.Items;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class AppUser {
@@ -9,8 +16,17 @@ public class AppUser {
     private Long id;
 
     private String username;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String role; // e.g. ROLE_ADMIN or ROLE_USER
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<Items> items = new ArrayList<>();
+
+    public AppUser() {
+    }
 
     public Long getId() {
         return id;
@@ -42,5 +58,13 @@ public class AppUser {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public List<Items> getItems() {
+        return items;
+    }
+
+    public void setItems(List<Items> items) {
+        this.items = items;
     }
 }
