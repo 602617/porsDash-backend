@@ -1,6 +1,7 @@
 package com.martin.demo.Controller;
 
 import com.martin.demo.auth.AppUser;
+import com.martin.demo.dto.BookingDto;
 import com.martin.demo.dto.BookingRequest;
 import com.martin.demo.model.Booking;
 import com.martin.demo.repository.AppUserRepository;
@@ -12,6 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/items/{itemId}/bookings")
@@ -23,6 +25,20 @@ public class BookingController {
     public BookingController(BookingService bookingService, AppUserRepository appUserRepository) {
         this.bookingService = bookingService;
         this.appUserRepository = appUserRepository;
+    }
+
+    @GetMapping
+    public List<BookingDto> listBookings(@PathVariable Long itemId) {
+        return bookingService.findBookingsForItem(itemId).stream()
+                .map(b -> new BookingDto(
+                        b.getId(),
+                        b.getItem().getId(),
+                        b.getUser().getId(),
+                        b.getUser().getUsername(),
+                        b.getStartTime(),
+                        b.getEndTime()
+                ))
+                .toList();
     }
 
     @PostMapping

@@ -46,6 +46,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,    "/api/items/*/unavailability/**").authenticated()
                         .requestMatchers(HttpMethod.POST,   "/api/items/*/unavailability/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/items/*/unavailability/**").authenticated()
+
+                        .requestMatchers(HttpMethod.GET,    "/api/items/*/bookings").authenticated()
+                        .requestMatchers(HttpMethod.GET,    "/api/items/*/bookings/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
