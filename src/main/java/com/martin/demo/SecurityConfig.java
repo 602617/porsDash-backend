@@ -49,6 +49,10 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET,    "/api/items/*/bookings").authenticated()
                         .requestMatchers(HttpMethod.GET,    "/api/items/*/bookings/**").authenticated()
+
+                        .requestMatchers(HttpMethod.GET, "/api/events/*").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/attendance").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
