@@ -6,6 +6,7 @@ import com.martin.demo.dto.ItemDto;
 import com.martin.demo.model.Items;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.ItemRepository;
+import com.martin.demo.service.ItemService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,9 +24,12 @@ public class ItemController {
     private final ItemRepository itemRepository;
     private final AppUserRepository appUserRepository;
 
-    public ItemController(ItemRepository itemRepository, AppUserRepository appUserRepository) {
+    private final ItemService itemService;
+
+    public ItemController(ItemRepository itemRepository, AppUserRepository appUserRepository, ItemService itemService) {
         this.itemRepository = itemRepository;
         this.appUserRepository = appUserRepository;
+        this.itemService = itemService;
     }
 
     @GetMapping
@@ -80,6 +84,15 @@ public class ItemController {
 
     return ResponseEntity.ok().build();
 
+    }
+
+    @GetMapping("/{itemId}")
+    public ItemDto getItemById(@PathVariable Long itemId, Principal principal) {
+        // if you need auth: you can load the user from principal here
+        return itemService
+                .findById(itemId)
+                .map(ItemDto::new)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item ikke funnet"));
     }
 
 }

@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/events/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/events/*/attendance").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
+                        .requestMatchers(HttpMethod.DELETE,"/api/events/eventId").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -6,6 +6,7 @@ import com.martin.demo.dto.BookingRequest;
 import com.martin.demo.model.Booking;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.service.BookingService;
+import com.martin.demo.service.NotificationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +22,7 @@ public class BookingController {
 
     private final BookingService bookingService;
     private final AppUserRepository appUserRepository;
+
 
     public BookingController(BookingService bookingService, AppUserRepository appUserRepository) {
         this.bookingService = bookingService;
@@ -54,6 +56,7 @@ public class BookingController {
                 req.getStartTime(),
                 req.getEndTime()
         );
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(saved);

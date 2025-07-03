@@ -19,14 +19,16 @@ public class BookingService {
     private final ItemRepository itemRepo;
     private final AppUserRepository userRepo;
     private final ItemUnavailabilityRepository itemUnavailabilityRepository;
+    private final NotificationService notificationService;
 
     public BookingService(BookingRepository repo,
                           ItemRepository itemRepo,
-                          AppUserRepository userRepo, ItemUnavailabilityRepository itemUnavailabilityRepository) {
+                          AppUserRepository userRepo, ItemUnavailabilityRepository itemUnavailabilityRepository, NotificationService notificationService) {
         this.repo     = repo;
         this.itemRepo = itemRepo;
         this.userRepo = userRepo;
         this.itemUnavailabilityRepository = itemUnavailabilityRepository;
+        this.notificationService = notificationService;
     }
 
     public List<Booking> findBookingsForItem(Long itemID) {
@@ -58,6 +60,11 @@ public class BookingService {
         b.setEndTime(end);
         b.setStatus(BookingStatus.PENDING);
 
+        notificationService.notifyOwner(
+                item.getUser().getId(),
+                usr.getUsername() + " har booket " + item.getName(),
+                "/items/" + item.getId()
+        );
         return repo.save(b);
     }
 }
