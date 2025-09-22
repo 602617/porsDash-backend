@@ -12,8 +12,10 @@ import com.martin.demo.repository.EventRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EventService {
@@ -40,6 +42,18 @@ public class EventService {
             ev.setEndTime(dto.getEndTime());
             ev.setCreatedBy(creator);
             return eventRepo.save(ev);
+
+        }
+
+        public void deleteEvent(Long eventId, String username) throws AccessDeniedException {
+        Event ev = eventRepo.findById(eventId).orElseThrow(() -> new EntityNotFoundException("event not found"));
+
+        if (!ev.getCreatedBy().getUsername().equals(username)) {
+            throw new AccessDeniedException("Du eier ikke dette eventet");
+        }
+
+        eventRepo.delete(ev);
+
 
         }
 
