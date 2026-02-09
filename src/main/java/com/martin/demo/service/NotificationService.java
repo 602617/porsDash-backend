@@ -31,6 +31,17 @@ public class NotificationService {
         repo.save(n);
     }
 
+    public void notifyUser(Long userId, String message, String url) {
+        AppUser user = users.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        Notification n = new Notification();
+        n.setRecipient(user);
+        n.setMessage(message);
+        n.setUrl(url);
+        repo.save(n);
+    }
+
     public List<Notification> listUnread(String username) {
         return repo.findByRecipientUsernameAndReadIsFalseOrderByCreatedAtDesc(username);
     }

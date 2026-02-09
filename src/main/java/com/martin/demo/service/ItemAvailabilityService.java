@@ -54,4 +54,35 @@ public class ItemAvailabilityService {
         // Returner alle slotene
         return repoAvail.findByItemIdOrderByStartTime(itemId);
     }
+
+    public void deleteSlot(Long itemId, Long slotId, String username) {
+
+        // 1) Finn item
+        Items item = repoItem.findById(itemId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Item med id " + itemId + " ikke funnet")
+                );
+
+        // 2) Eier-sjekk
+        AppUser owner = item.getUser();
+        if (owner == null || !owner.getUsername().equals(username)) {
+            throw new AccessDeniedException("Kun eier kan slette tilgjengelighet");
+        }
+
+        // 3) Finn slot
+        ItemAvailability slot = repoAvail.findById(slotId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Tilgjengelighet med id " + slotId + " ikke funnet")
+                );
+
+        // 4) Sjekk at slot tilhører item
+        if (!slot.getItem().getId().equals(itemId)) {
+            throw new EntityNotFoundException(
+                    "Tilgjengeligheten tilhører ikke item med id " + itemId
+            );
+        }
+
+        // 5) Slett
+        repoAvail.delete(slot);
+    }
 }

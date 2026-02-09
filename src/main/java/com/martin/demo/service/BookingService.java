@@ -7,6 +7,7 @@ import com.martin.demo.model.ItemUnavailability;
 import com.martin.demo.model.Items;
 import com.martin.demo.repository.*;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -66,5 +67,71 @@ public class BookingService {
                 "/items/" + item.getId()
         );
         return repo.save(b);
+    }
+
+    public void cancelBooking(Long itemId, Long bookingId, String username) {
+
+        // 1) Ensure item exists
+        Items item = itemRepo.findById(itemId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Item ikke funnet " + itemId)
+                );
+
+        // 2) Find booking
+        Booking booking = repo.findById(bookingId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Booking ikke funnet " + bookingId)
+                );
+
+        // 3) Booking must belong to item
+        if (booking.getItem() == null
+                || booking.getItem().getId() == null
+                || !booking.getItem().getId().equals(itemId)) {
+            throw new EntityNotFoundException(
+                    "Booking tilhører ikke item " + itemId
+            );
+        }
+
+        // 4) Permission: owner OR booker
+        String ownerUsername =
+                item.getUser() != null ? item.getUser().getUsername() : null;
+
+        String bookerUsername =
+                booking.getUser() != null ? booking.getUser().getUsername() : null;
+
+        boolean isOwner = ownerUsername != null && ownerUsername.equals(username);
+        boolean isBooker = bookerUsername != null && bookerUsername.equals(username);
+
+        if (!isOwner && !isBooker) {
+            throw new AccessDeniedException(
+                    "Kun eier eller den som opprettet bookingen kan kansellere"
+            );
+        }
+
+        // 5) Prevent double-cancel
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            return; // idempotent
+        }
+
+        // 6) Cancel (soft delete)
+        booking.setStatus(BookingStatus.CANCELLED);
+        repo.save(booking);
+
+        // 7) Optional notifications
+        if (isOwner && !isBooker) {
+            notificationService.notifyUser(
+                    booking.getUser().getId(),
+                    "Bookingen for " + item.getName() + " ble kansellert av eier",
+                    "/bookings/" + booking.getId()
+            );
+        }
+
+        if (isBooker && !isOwner) {
+            notificationService.notifyOwner(
+                    item.getUser().getId(),
+                    "Bookingen for " + item.getName() + " ble kansellert av bruker",
+                    "/items/" + item.getId()
+            );
+        }
     }
 }

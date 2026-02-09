@@ -61,4 +61,15 @@ public class BookingController {
                 .status(HttpStatus.CREATED)
                 .body(saved);
     }
+
+    @DeleteMapping("/{bookingId}")
+    public ResponseEntity<Void> cancelBooking(
+            @PathVariable Long itemId,
+            @PathVariable Long bookingId,
+            Principal principal
+    ) {
+        bookingService.cancelBooking(itemId, bookingId, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
+
 }

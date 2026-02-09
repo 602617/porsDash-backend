@@ -42,7 +42,7 @@ public class ItemAvailabilityController {
         return ResponseEntity.status(HttpStatus.CREATED).body(slot);
     }
 
-    /**
+
     @DeleteMapping("/{slotId}")
     public ResponseEntity<?> delete(
             @PathVariable Long itemId,
@@ -52,5 +52,5 @@ public class ItemAvailabilityController {
         service.deleteSlot(itemId, slotId, principal.getName());
         return ResponseEntity.noContent().build();
     }
-            */
+
 }
