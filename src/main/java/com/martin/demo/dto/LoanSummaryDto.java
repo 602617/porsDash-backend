@@ -9,6 +9,8 @@ import java.util.List;
 public record LoanSummaryDto(
         Long loanId,
         String title,
+        String borrowerUsername,
+        String lenderUsername,
         BigDecimal principalAmount,
         BigDecimal sumPaid,
         BigDecimal sumLeft,
@@ -19,6 +21,8 @@ public record LoanSummaryDto(
         return new LoanSummaryDto(
                 loan.getId(),
                 loan.getTitle(),
+                loan.getBorrower().getUsername(),
+                loan.getLender().getUsername(),
                 loan.getPrincipalAmount(),
                 sumPaid,
                 sumLeft,
