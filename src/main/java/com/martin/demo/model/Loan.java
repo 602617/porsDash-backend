@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Loan {
@@ -24,6 +26,15 @@ public class Loan {
     private String title; // optional, e.g. "Private loan"
 
     private Instant createdAt = Instant.now();
+
+    @ManyToMany
+    @JoinTable(
+            name = "loan_access",
+            joinColumns = @JoinColumn(name = "loan_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<AppUser> allowedUsers = new HashSet<>();
+
 
     public Long getId() {
         return id;
@@ -71,5 +82,13 @@ public class Loan {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Set<AppUser> getAllowedUsers() {
+        return allowedUsers;
+    }
+
+    public void setAllowedUsers(Set<AppUser> allowedUsers) {
+        this.allowedUsers = allowedUsers;
     }
 }

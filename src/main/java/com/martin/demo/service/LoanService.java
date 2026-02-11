@@ -12,7 +12,7 @@ import com.martin.demo.repository.LoanPaymentRepository;
 import com.martin.demo.repository.LoanRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -32,15 +32,27 @@ public class LoanService {
         this.users = users;
     }
 
+    private void assertAccess(Loan loan, String username) {
+        boolean isBorrower = loan.getBorrower() != null
+                && username.equals(loan.getBorrower().getUsername());
+
+        boolean isLender = loan.getLender() != null
+                && username.equals(loan.getLender().getUsername());
+
+        boolean isShared = loan.getAllowedUsers().stream()
+                .anyMatch(u -> username.equals(u.getUsername()));
+
+        if (!isBorrower && !isLender && !isShared) {
+            throw new AccessDeniedException("Not allowed");
+        }
+    }
+
     private AppUser me(String username) {
         return users.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 
-    private Loan loanOrThrow(Long loanId) {
-        return loans.findById(loanId)
-                .orElseThrow(() -> new EntityNotFoundException("Loan not found"));
-    }
+
 
     private void assertParticipant(Loan loan, AppUser me) {
         boolean ok = loan.getBorrower().getId().equals(me.getId())
@@ -49,23 +61,29 @@ public class LoanService {
     }
 
     public LoanSummaryDto getLoan(Long loanId, String username) {
-        Loan loan = loans.findById(loanId).orElseThrow(() -> new EntityNotFoundException("Loan not found"));
-        AppUser me = me(username);
-        assertParticipant(loan, me);
 
-        ;
-        assertParticipant(loan, me);
+        // Load loan
+        Loan loan = loans.findById(loanId)
+                .orElseThrow(() -> new EntityNotFoundException("Loan not found"));
 
-        List<LoanPayment> history = payments.findByLoanIdOrderByPaidAtDesc(loanId);
+        // 🔐 Access check (borrower OR lender OR shared)
+        assertAccess(loan, username);
 
+        // Load payment history
+        List<LoanPayment> history =
+                payments.findByLoanIdOrderByPaidAtDesc(loanId);
+
+        // Calculate totals
         BigDecimal sumPaid = history.stream()
                 .map(LoanPayment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal left = loan.getPrincipalAmount().subtract(sumPaid);
 
+        // Return DTO
         return LoanSummaryDto.from(loan, sumPaid, left, history);
     }
+
 
     public LoanPaymentDto addPayment(Long loanId, CreatePaymentDto dto, String username) {
         Loan loan = loans.findById(loanId)
@@ -118,10 +136,7 @@ public class LoanService {
         payments.delete(p);
     }
 
-    private AppUser me(Authentication auth) {
-        return users.findByUsername(auth.getName())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-    }
+
 
 
 
