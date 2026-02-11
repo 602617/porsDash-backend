@@ -8,18 +8,22 @@ import java.util.List;
 
 public record LoanSummaryDto(
         Long loanId,
+        String title,
         BigDecimal principalAmount,
         BigDecimal sumPaid,
         BigDecimal sumLeft,
         List<LoanPaymentDto> history
+
 ) {
     public static LoanSummaryDto from(Loan loan, BigDecimal sumPaid, BigDecimal sumLeft, List<LoanPayment> history) {
         return new LoanSummaryDto(
                 loan.getId(),
+                loan.getTitle(),
                 loan.getPrincipalAmount(),
                 sumPaid,
                 sumLeft,
                 history.stream().map(LoanPaymentDto::from).toList()
+
         );
     }
 }

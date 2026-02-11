@@ -20,6 +20,7 @@ public class LoanController {
 
     @GetMapping("/{loanId}")
     public LoanSummaryDto getLoan(@PathVariable Long loanId, Authentication auth) {
+        System.out.println("JWT principal = " + auth.getName());
         return service.getLoan(loanId, auth.getName());
     }
 
