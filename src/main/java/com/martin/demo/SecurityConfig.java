@@ -42,6 +42,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,   "/api/items/*/availability/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/items/*/availability/**").authenticated()
 
+                        .requestMatchers(HttpMethod.POST, "/api/push/subscribe").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/push/unsubscribe").authenticated()
+
                         .requestMatchers(HttpMethod.GET, "/api/items/*/unavailability").authenticated()
                         .requestMatchers(HttpMethod.GET,    "/api/items/*/unavailability/**").authenticated()
                         .requestMatchers(HttpMethod.POST,   "/api/items/*/unavailability/**").authenticated()

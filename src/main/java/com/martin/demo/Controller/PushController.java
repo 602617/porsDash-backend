@@ -25,36 +25,46 @@ public class PushController {
 
     @PostMapping("/subscribe")
     public ResponseEntity<?> subscribe(@RequestBody PushSubscription dto, Principal p) {
-
         AppUser user = users.findByUsername(p.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (dto == null || dto.endpoint == null || dto.keys == null) {
+        if (dto == null || dto.endpoint == null || dto.endpoint.isBlank() || dto.keys == null) {
             return ResponseEntity.badRequest().body("Invalid subscription");
         }
 
         String p256dh = dto.keys.get("p256dh");
         String auth = dto.keys.get("auth");
 
-        if (p256dh == null || auth == null) {
+        if (p256dh == null || p256dh.isBlank() || auth == null || auth.isBlank()) {
             return ResponseEntity.badRequest().body("Missing keys");
         }
 
-        if (!subs.existsByEndpoint(dto.endpoint)) {
-            UserPushSubscription s = new UserPushSubscription();
-            s.setUser(user);
-            s.setEndpoint(dto.endpoint);
-            s.setP256dh(p256dh);
-            s.setAuth(auth);
-            subs.save(s);
+        // De-dupe by endpoint
+        var existingOpt = subs.findByEndpoint(dto.endpoint);
+        if (existingOpt.isPresent()) {
+            UserPushSubscription existing = existingOpt.get();
+            // If endpoint already exists, just ensure it belongs to this user + keys are updated
+            existing.setUser(user);
+            existing.setP256dh(p256dh);
+            existing.setAuth(auth);
+            subs.save(existing);
+            return ResponseEntity.noContent().build();
         }
+
+        UserPushSubscription s = new UserPushSubscription();
+        s.setUser(user);
+        s.setEndpoint(dto.endpoint);
+        s.setP256dh(p256dh);
+        s.setAuth(auth);
+        subs.save(s);
 
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/unsubscribe")
-    public ResponseEntity<?> unsubscribe(@RequestBody PushSubscription dto) {
-        if (dto != null && dto.endpoint != null) {
+    public ResponseEntity<?> unsubscribe(@RequestBody PushSubscription dto, Principal p) {
+        // optional: require logged-in, but no need to check ownership strictly
+        if (dto != null && dto.endpoint != null && !dto.endpoint.isBlank()) {
             subs.deleteByEndpoint(dto.endpoint);
         }
         return ResponseEntity.noContent().build();
