@@ -15,20 +15,14 @@ public class NotificationService {
 
     private final NotificationRepository repo;
     private final AppUserRepository users;
+    private final WebPushService webPush;
 
-    public NotificationService(NotificationRepository repo, AppUserRepository users) {
-        this.repo  = repo;
+    public NotificationService(NotificationRepository repo,
+                               AppUserRepository users,
+                               WebPushService webPush) {
+        this.repo = repo;
         this.users = users;
-    }
-
-    public void notifyOwner(Long ownerId, String message, String url) {
-        AppUser owner = users.findById(ownerId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Notification n = new Notification();
-        n.setRecipient(owner);
-        n.setMessage(message);
-        n.setUrl(url);
-        repo.save(n);
+        this.webPush = webPush;
     }
 
     public void notifyUser(Long userId, String message, String url) {
@@ -40,6 +34,13 @@ public class NotificationService {
         n.setMessage(message);
         n.setUrl(url);
         repo.save(n);
+
+        // 🔔 real push (if user has subscriptions)
+        webPush.sendToUser(user.getUsername(), "Porsdash", message, url);
+    }
+
+    public void notifyOwner(Long ownerId, String message, String url) {
+        notifyUser(ownerId, message, url);
     }
 
     public List<Notification> listUnread(String username) {
@@ -49,8 +50,11 @@ public class NotificationService {
     public void markRead(Long notificationId, String username) {
         Notification n = repo.findById(notificationId)
                 .orElseThrow(() -> new EntityNotFoundException("Not found"));
-        if (!n.getRecipient().getUsername().equals(username))
+
+        if (!n.getRecipient().getUsername().equals(username)) {
             throw new AccessDeniedException("Not yours");
+        }
+
         n.setRead(true);
         repo.save(n);
     }
