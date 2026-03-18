@@ -6,42 +6,40 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-public class Notification {
+public class AppNotification {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "recipient_id", nullable = false)
-    private AppUser recipient;      // eieren av itemet
+    private AppUser recipient;
 
-    private String message;         // f.eks. "Ola har booket Drill"
+    @Column(nullable = false)
+    private String message;
 
-    private String url;             // valgfri lenke tilbake til UI (/items/5)
+    private String url;
 
-    private boolean read = false;   // om varselet er lest
+    @Column(nullable = false)
+    private boolean read = false;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public Notification() {
+    protected AppNotification() {
     }
 
-    public Notification(Long id, AppUser recipient, String message, String url, boolean read, LocalDateTime createdAt) {
-        this.id = id;
+    public AppNotification(AppUser recipient, String message, String url) {
         this.recipient = recipient;
         this.message = message;
         this.url = url;
-        this.read = read;
-        this.createdAt = createdAt;
+        this.read = false;
+        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public AppUser getRecipient() {

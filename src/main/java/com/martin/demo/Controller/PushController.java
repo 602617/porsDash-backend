@@ -5,11 +5,15 @@ import com.martin.demo.dto.PushSubscription;
 import com.martin.demo.model.UserPushSubscription;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.UserPushSubscriptionRepository;
+import com.martin.demo.service.PushNotificationService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/push")
@@ -17,14 +21,24 @@ public class PushController {
 
     private final AppUserRepository users;
     private final UserPushSubscriptionRepository subs;
+    private final PushNotificationService pushNotificationService;
 
-    public PushController(AppUserRepository users, UserPushSubscriptionRepository subs) {
+    public PushController(
+            AppUserRepository users,
+            UserPushSubscriptionRepository subs,
+            PushNotificationService pushNotificationService
+    ) {
         this.users = users;
         this.subs = subs;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @PostMapping("/subscribe")
     public ResponseEntity<?> subscribe(@RequestBody PushSubscription dto, Principal p) {
+        if (p == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+        }
+
         AppUser user = users.findByUsername(p.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -39,11 +53,9 @@ public class PushController {
             return ResponseEntity.badRequest().body("Missing keys");
         }
 
-        // De-dupe by endpoint
         var existingOpt = subs.findByEndpoint(dto.endpoint);
         if (existingOpt.isPresent()) {
             UserPushSubscription existing = existingOpt.get();
-            // If endpoint already exists, just ensure it belongs to this user + keys are updated
             existing.setUser(user);
             existing.setP256dh(p256dh);
             existing.setAuth(auth);
@@ -63,10 +75,69 @@ public class PushController {
 
     @PostMapping("/unsubscribe")
     public ResponseEntity<?> unsubscribe(@RequestBody PushSubscription dto, Principal p) {
-        // optional: require logged-in, but no need to check ownership strictly
-        if (dto != null && dto.endpoint != null && !dto.endpoint.isBlank()) {
-            subs.deleteByEndpoint(dto.endpoint);
+        if (p == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
         }
+
+        if (dto == null || dto.endpoint == null || dto.endpoint.isBlank()) {
+            return ResponseEntity.badRequest().body("Missing endpoint");
+        }
+
+        AppUser user = users.findByUsername(p.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        subs.findByEndpoint(dto.endpoint).ifPresent(existing -> {
+            if (existing.getUser() != null && existing.getUser().getId().equals(user.getId())) {
+                subs.delete(existing);
+            }
+        });
+
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/test")
+    public ResponseEntity<?> sendTestPush(Principal p) {
+        if (p == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+        }
+
+        AppUser user = users.findByUsername(p.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        List<UserPushSubscription> userSubscriptions = subs.findAllByUserId(user.getId());
+
+        if (userSubscriptions.isEmpty()) {
+            return ResponseEntity.badRequest().body("No subscriptions found for user");
+        }
+
+        int sent = 0;
+        int failed = 0;
+
+        for (UserPushSubscription sub : userSubscriptions) {
+            try {
+                pushNotificationService.sendPush(
+                        sub,
+                        "Test notification",
+                        "Push notifications are working",
+                        "/"
+                );
+                sent++;
+            } catch (Exception e) {
+                failed++;
+
+                // remove dead subscriptions if provider says endpoint is gone
+                // keep this simple for now; improve later in service if you want
+                String msg = e.getMessage() != null ? e.getMessage() : "";
+                if (msg.contains("410") || msg.contains("404")) {
+                    subs.delete(sub);
+                }
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Test push attempted",
+                "sent", sent,
+                "failed", failed
+        ));
     }
 }

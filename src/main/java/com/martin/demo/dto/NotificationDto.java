@@ -1,6 +1,7 @@
 package com.martin.demo.dto;
 
-import com.martin.demo.model.Notification;
+import com.martin.demo.model.AppNotification;
+
 
 import java.time.LocalDateTime;
 
@@ -14,7 +15,7 @@ public class NotificationDto {
     public NotificationDto() {
     }
 
-    public NotificationDto(Notification n) {
+    public NotificationDto(AppNotification n) {
         this.id        = n.getId();
         this.message   = n.getMessage();
         this.url       = n.getUrl();

@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 public class UserPushSubscription {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,13 +19,17 @@ public class UserPushSubscription {
     @Column(nullable = false, unique = true, length = 1000)
     private String endpoint;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 512)
     private String p256dh;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String auth;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public UserPushSubscription() {
+    }
 
     public Long getId() {
         return id;
@@ -74,4 +79,3 @@ public class UserPushSubscription {
         this.createdAt = createdAt;
     }
 }
-
