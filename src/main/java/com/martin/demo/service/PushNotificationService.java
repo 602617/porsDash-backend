@@ -6,12 +6,10 @@ import com.martin.demo.repository.UserPushSubscriptionRepository;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.util.HashMap;
 import java.util.List;
@@ -29,15 +27,25 @@ public class PushNotificationService {
             @Value("${vapid.public.key}") String publicKey,
             @Value("${vapid.private.key}") String privateKey,
             @Value("${vapid.subject}") String subject
-    ) throws GeneralSecurityException, JoseException {
+    ) {
         this.subs = subs;
 
-        Security.addProvider(new BouncyCastleProvider());
+        try {
+            Security.addProvider(new BouncyCastleProvider());
 
-        this.pushService = new PushService()
-                .setPublicKey(publicKey)
-                .setPrivateKey(privateKey)
-                .setSubject(subject);
+            this.pushService = new PushService()
+                    .setPublicKey(publicKey)
+                    .setPrivateKey(privateKey)
+                    .setSubject(subject);
+
+        } catch (Exception e) {
+            System.err.println("Failed to initialize PushNotificationService");
+            System.err.println("vapid.public.key present: " + (publicKey != null && !publicKey.isBlank()));
+            System.err.println("vapid.private.key present: " + (privateKey != null && !privateKey.isBlank()));
+            System.err.println("vapid.subject: " + subject);
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize PushNotificationService", e);
+        }
     }
 
     public void sendToUser(String username, String title, String body, String url) {
