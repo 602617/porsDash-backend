@@ -26,8 +26,8 @@ public class PushService {
 
     public PushService(
             UserPushSubscriptionRepository subs,
-            @Value("${vapid.public.key:}") String publicKey,
-            @Value("${vapid.private.key:}") String privateKey,
+            @Value("${vapid.public:}") String publicKey,
+            @Value("${vapid.private:}") String privateKey,
             @Value("${vapid.subject:}") String subject
     ) {
         this.subs = subs;
@@ -80,6 +80,10 @@ public class PushService {
                 log.info("Push sent successfully to endpoint {}", sub.getEndpoint());
             } catch (Exception e) {
                 log.error("Failed to send push notification to endpoint {}", sub.getEndpoint(), e);
+                if (isEndpointGone(e)) {
+                    subs.deleteByEndpoint(sub.getEndpoint());
+                    log.info("Deleted stale push subscription for endpoint {}", sub.getEndpoint());
+                }
             }
         }
     }
@@ -104,5 +108,10 @@ public class PushService {
         );
 
         pushService.send(notification);
+    }
+
+    private static boolean isEndpointGone(Exception e) {
+        String msg = e.getMessage();
+        return msg != null && (msg.contains("410") || msg.contains("404"));
     }
 }

@@ -41,7 +41,6 @@ public class NotificationController {
     // NEW: Test push to yourself (great for Postman)
     @PostMapping("/test")
     public ResponseEntity<?> testPush(@RequestBody TestNotificationRequest req, Principal p) {
-
         AppUser me = users.findByUsername(p.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -54,23 +53,6 @@ public class NotificationController {
                 : req.getUrl();
 
         svc.notifyUser(me.getId(), message, url);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Sent");
-    }
-
-    // OPTIONAL: Send to specific userId (lock down or remove later)
-    @PostMapping("/user/{userId}")
-    public ResponseEntity<?> sendToUser(@PathVariable Long userId,
-                                        @RequestBody TestNotificationRequest req) {
-
-        String message = (req.getMessage() == null || req.getMessage().isBlank())
-                ? "Notification"
-                : req.getMessage();
-
-        String url = (req.getUrl() == null || req.getUrl().isBlank())
-                ? "/"
-                : req.getUrl();
-
-        svc.notifyUser(userId, message, url);
         return ResponseEntity.status(HttpStatus.CREATED).body("Sent");
     }
 

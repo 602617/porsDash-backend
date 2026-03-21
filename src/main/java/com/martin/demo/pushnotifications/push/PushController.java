@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +42,9 @@ public class PushController {
         if (dto == null || dto.endpoint == null || dto.endpoint.isBlank() || dto.keys == null) {
             return ResponseEntity.badRequest().body("Invalid subscription");
         }
+        if (!isValidHttpsEndpoint(dto.endpoint)) {
+            return ResponseEntity.badRequest().body("Invalid endpoint URL");
+        }
 
         String p256dh = dto.keys.get("p256dh");
         String auth = dto.keys.get("auth");
@@ -52,6 +56,9 @@ public class PushController {
         var existingOpt = subs.findByEndpoint(dto.endpoint);
         if (existingOpt.isPresent()) {
             UserPushSubscription existing = existingOpt.get();
+            if (existing.getUser() != null && !existing.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Endpoint already belongs to another user");
+            }
             existing.setUser(user);
             existing.setP256dh(p256dh);
             existing.setAuth(auth);
@@ -135,5 +142,14 @@ public class PushController {
                 "sent", sent,
                 "failed", failed
         ));
+    }
+
+    private static boolean isValidHttpsEndpoint(String endpoint) {
+        try {
+            URI uri = URI.create(endpoint);
+            return "https".equalsIgnoreCase(uri.getScheme()) && uri.getHost() != null && !uri.getHost().isBlank();
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
