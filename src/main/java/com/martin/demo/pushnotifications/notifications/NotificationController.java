@@ -1,9 +1,7 @@
-package com.martin.demo.Controller;
+package com.martin.demo.pushnotifications.notifications;
 
 import com.martin.demo.auth.AppUser;
-import com.martin.demo.dto.NotificationDto;
 import com.martin.demo.repository.AppUserRepository;
-import com.martin.demo.service.NotificationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -6,10 +6,8 @@ import com.martin.demo.dto.BookingRequest;
 import com.martin.demo.model.Booking;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.service.BookingService;
-import com.martin.demo.service.NotificationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,10 +1,7 @@
-package com.martin.demo.service;
+package com.martin.demo.pushnotifications.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.martin.demo.model.UserPushSubscription;
-import com.martin.demo.repository.UserPushSubscriptionRepository;
 import nl.martijndwars.webpush.Notification;
-import nl.martijndwars.webpush.PushService;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,16 +15,16 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class PushNotificationService {
+public class PushService {
 
-    private static final Logger log = LoggerFactory.getLogger(PushNotificationService.class);
+    private static final Logger log = LoggerFactory.getLogger(PushService.class);
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final UserPushSubscriptionRepository subs;
-    private PushService pushService;
+    private nl.martijndwars.webpush.PushService pushService;
     private boolean enabled = false;
 
-    public PushNotificationService(
+    public PushService(
             UserPushSubscriptionRepository subs,
             @Value("${vapid.public.key:}") String publicKey,
             @Value("${vapid.private.key:}") String privateKey,
@@ -48,7 +45,7 @@ public class PushNotificationService {
 
             Security.addProvider(new BouncyCastleProvider());
 
-            this.pushService = new PushService()
+            this.pushService = new nl.martijndwars.webpush.PushService()
                     .setPublicKey(publicKey)
                     .setPrivateKey(privateKey)
                     .setSubject(subject);
@@ -66,11 +63,21 @@ public class PushNotificationService {
             return;
         }
 
+        log.info("Sending push to username {}", username);
+
         List<UserPushSubscription> subscriptions = subs.findByUserUsername(username);
+        log.info("Found {} subscriptions for {}", subscriptions.size(), username);
+
+        if (subscriptions.isEmpty()) {
+            log.warn("No push subscriptions found for {}", username);
+            return;
+        }
 
         for (UserPushSubscription sub : subscriptions) {
             try {
+                log.info("Sending push to endpoint {}", sub.getEndpoint());
                 sendPush(sub, title, body, url);
+                log.info("Push sent successfully to endpoint {}", sub.getEndpoint());
             } catch (Exception e) {
                 log.error("Failed to send push notification to endpoint {}", sub.getEndpoint(), e);
             }

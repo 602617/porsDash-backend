@@ -1,4 +1,4 @@
-package com.martin.demo.model;
+package com.martin.demo.pushnotifications.push;
 
 import com.martin.demo.auth.AppUser;
 import jakarta.persistence.*;

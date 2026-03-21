@@ -1,7 +1,7 @@
-package com.martin.demo.dto;
+package com.martin.demo.pushnotifications.notifications;
 
-import com.martin.demo.model.AppNotification;
 
+import com.martin.demo.pushnotifications.notifications.AppNotification;
 
 import java.time.LocalDateTime;
 

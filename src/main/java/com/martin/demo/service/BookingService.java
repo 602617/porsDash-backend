@@ -3,8 +3,8 @@ package com.martin.demo.service;
 import com.martin.demo.auth.AppUser;
 import com.martin.demo.model.Booking;
 import com.martin.demo.model.BookingStatus;
-import com.martin.demo.model.ItemUnavailability;
 import com.martin.demo.model.Items;
+import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -41,19 +41,17 @@ public class BookingService {
     public Booking createBooking(Long itemId, Long userId,
                                  LocalDateTime start,
                                  LocalDateTime end) {
-        // 1. Hent entiteter
-        Items item   = itemRepo.findById(itemId)
+        Items item = itemRepo.findById(itemId)
                 .orElseThrow(() -> new EntityNotFoundException("Item ikke funnet"));
+
         AppUser usr = userRepo.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User ikke funnet"));
 
-        // 2. Sjekk overlapp
         var blocked = itemUnavailabilityRepository.findOverlapping(itemId, start, end);
         if (!blocked.isEmpty()) {
             throw new IllegalStateException("Tidsrommet er blokkert av eier");
         }
 
-        // 3. Lag og lagre booking
         Booking b = new Booking();
         b.setItem(item);
         b.setUser(usr);
@@ -61,12 +59,15 @@ public class BookingService {
         b.setEndTime(end);
         b.setStatus(BookingStatus.PENDING);
 
+        Booking savedBooking = repo.save(b);
+
         notificationService.notifyOwner(
                 item.getUser().getId(),
                 usr.getUsername() + " har booket " + item.getName(),
-                "/items/" + item.getId()
+                "/bookings/" + savedBooking.getId()
         );
-        return repo.save(b);
+
+        return savedBooking;
     }
 
     public void cancelBooking(Long itemId, Long bookingId, String username) {

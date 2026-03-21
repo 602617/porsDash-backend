@@ -1,4 +1,4 @@
-package com.martin.demo.dto;
+package com.martin.demo.pushnotifications.push;
 
 import java.util.Map;
 

@@ -1,7 +1,7 @@
-package com.martin.demo.service;
+package com.martin.demo.pushnotifications.push;
 
-import com.martin.demo.model.UserPushSubscription;
-import com.martin.demo.repository.UserPushSubscriptionRepository;
+import com.martin.demo.pushnotifications.push.UserPushSubscription;
+import com.martin.demo.pushnotifications.push.UserPushSubscriptionRepository;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
 import org.springframework.beans.factory.annotation.Value;

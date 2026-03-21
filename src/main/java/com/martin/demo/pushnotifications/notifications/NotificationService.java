@@ -1,9 +1,8 @@
-package com.martin.demo.service;
+package com.martin.demo.pushnotifications.notifications;
 
 import com.martin.demo.auth.AppUser;
-import com.martin.demo.model.AppNotification;
+import com.martin.demo.pushnotifications.push.PushService;
 import com.martin.demo.repository.AppUserRepository;
-import com.martin.demo.repository.NotificationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -15,11 +14,11 @@ public class NotificationService {
 
     private final NotificationRepository repo;
     private final AppUserRepository users;
-    private final PushNotificationService webPush;
+    private final PushService webPush;
 
     public NotificationService(NotificationRepository repo,
                                AppUserRepository users,
-                               PushNotificationService webPush) {
+                               PushService webPush) {
         this.repo = repo;
         this.users = users;
         this.webPush = webPush;

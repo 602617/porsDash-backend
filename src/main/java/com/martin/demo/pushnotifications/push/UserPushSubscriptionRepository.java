@@ -1,6 +1,6 @@
-package com.martin.demo.repository;
+package com.martin.demo.pushnotifications.push;
 
-import com.martin.demo.model.UserPushSubscription;
+import com.martin.demo.pushnotifications.push.UserPushSubscription;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

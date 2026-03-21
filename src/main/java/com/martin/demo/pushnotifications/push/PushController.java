@@ -1,11 +1,7 @@
-package com.martin.demo.Controller;
+package com.martin.demo.pushnotifications.push;
 
 import com.martin.demo.auth.AppUser;
-import com.martin.demo.dto.PushSubscription;
-import com.martin.demo.model.UserPushSubscription;
 import com.martin.demo.repository.AppUserRepository;
-import com.martin.demo.repository.UserPushSubscriptionRepository;
-import com.martin.demo.service.PushNotificationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,12 +17,12 @@ public class PushController {
 
     private final AppUserRepository users;
     private final UserPushSubscriptionRepository subs;
-    private final PushNotificationService pushNotificationService;
+    private final PushService pushNotificationService;
 
     public PushController(
             AppUserRepository users,
             UserPushSubscriptionRepository subs,
-            PushNotificationService pushNotificationService
+            PushService pushNotificationService
     ) {
         this.users = users;
         this.subs = subs;
