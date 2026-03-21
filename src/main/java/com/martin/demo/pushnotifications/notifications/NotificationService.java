@@ -31,7 +31,7 @@ public class NotificationService {
         AppNotification n = new AppNotification(user, message, url);
         repo.save(n);
 
-        webPush.sendToUser(user.getUsername(), "Porsdash", message, url);
+        webPush.sendToUser(user.getUsername(), "PorsDash", message, url);
     }
 
     public void notifyOwner(Long ownerId, String message, String url) {
