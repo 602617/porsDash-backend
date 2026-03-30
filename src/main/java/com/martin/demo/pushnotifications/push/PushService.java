@@ -2,6 +2,7 @@ package com.martin.demo.pushnotifications.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.martijndwars.webpush.Notification;
+import nl.martijndwars.webpush.Urgency;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,12 +101,14 @@ public class PushService {
 
         String jsonPayload = objectMapper.writeValueAsString(payload);
 
-        Notification notification = new Notification(
-                sub.getEndpoint(),
-                sub.getP256dh(),
-                sub.getAuth(),
-                jsonPayload.getBytes(StandardCharsets.UTF_8)
-        );
+        Notification notification = Notification.builder()
+                .endpoint(sub.getEndpoint())
+                .userPublicKey(sub.getP256dh())
+                .userAuth(sub.getAuth())
+                .payload(jsonPayload.getBytes(StandardCharsets.UTF_8))
+                .ttl(2419200)
+                .urgency(Urgency.HIGH)
+                .build();
 
         pushService.send(notification);
     }
