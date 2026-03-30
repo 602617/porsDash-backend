@@ -41,6 +41,21 @@ public class BookingController {
                 .toList();
     }
 
+    @GetMapping("/{bookingId}")
+    public BookingDto getBooking(
+            @PathVariable Long itemId,
+            @PathVariable Long bookingId) {
+        Booking b = bookingService.findBooking(itemId, bookingId);
+        return new BookingDto(
+                b.getId(),
+                b.getItem().getId(),
+                b.getUser().getId(),
+                b.getUser().getUsername(),
+                b.getStartTime(),
+                b.getEndTime()
+        );
+    }
+
     @PostMapping
     public ResponseEntity<Booking> bookItem(
             @PathVariable Long itemId,

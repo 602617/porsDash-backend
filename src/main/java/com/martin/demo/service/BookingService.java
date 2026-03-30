@@ -39,6 +39,19 @@ public class BookingService {
         return repo.findByItemId(itemID);
     }
 
+    public Booking findBooking(Long itemId, Long bookingId) {
+        itemRepo.findById(itemId).orElseThrow(() -> new EntityNotFoundException("Item ikke funnet " + itemId));
+
+        Booking booking = repo.findById(bookingId)
+                .orElseThrow(() -> new EntityNotFoundException("Booking ikke funnet " + bookingId));
+
+        if (!booking.getItem().getId().equals(itemId)) {
+            throw new EntityNotFoundException("Booking tilhører ikke item " + itemId);
+        }
+
+        return booking;
+    }
+
     public Booking createBooking(Long itemId, Long userId,
                                  LocalDateTime start,
                                  LocalDateTime end) {
