@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -61,10 +62,12 @@ public class BookingService {
 
         Booking savedBooking = repo.save(b);
 
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM HH:mm");
         notificationService.notifyOwner(
                 item.getUser().getId(),
-                usr.getUsername() + " har booket " + item.getName(),
-                "/bookings/" + savedBooking.getId()
+                usr.getUsername() + " har booket " + item.getName()
+                        + " (" + start.format(fmt) + " – " + end.format(fmt) + ")",
+                "/items/" + item.getId() + "/bookings/" + savedBooking.getId()
         );
 
         return savedBooking;
@@ -123,7 +126,7 @@ public class BookingService {
             notificationService.notifyUser(
                     booking.getUser().getId(),
                     "Bookingen for " + item.getName() + " ble kansellert av eier",
-                    "/bookings/" + booking.getId()
+                    "/items/" + item.getId() + "/bookings/" + booking.getId()
             );
         }
 
