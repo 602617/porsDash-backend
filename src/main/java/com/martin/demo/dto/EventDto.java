@@ -1,6 +1,7 @@
 package com.martin.demo.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class EventDto {
     private Long id;
@@ -9,6 +10,7 @@ public class EventDto {
     private String location;
     private LocalDateTime startTime, endTime;
     private LocalDateTime createdAt = LocalDateTime.now();
+    private List<Long> invitedUserIds;
 
     public EventDto() {
     }
@@ -77,5 +79,13 @@ public class EventDto {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<Long> getInvitedUserIds() {
+        return invitedUserIds;
+    }
+
+    public void setInvitedUserIds(List<Long> invitedUserIds) {
+        this.invitedUserIds = invitedUserIds;
     }
 }

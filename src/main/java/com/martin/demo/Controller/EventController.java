@@ -40,8 +40,8 @@ public class EventController {
 
     /** Liste alle arrangement */
     @GetMapping
-    public List<EventListDto> listEvents() {
-        return eventService.listAll()
+    public List<EventListDto> listEvents(Principal principal) {
+        return eventService.listAll(principal.getName())
                 .stream().map(EventListDto::new)
                 .toList();
     }

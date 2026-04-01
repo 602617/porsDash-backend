@@ -22,4 +22,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("end")    LocalDateTime end);
 
     List<Booking> findByItemId(Long itemId);
+
+    List<Booking> findByUserUsernameOrderByStartTimeDesc(String username);
 }

@@ -33,6 +33,10 @@ public class BookingService {
         this.notificationService = notificationService;
     }
 
+    public List<Booking> findBookingsForUser(String username) {
+        return repo.findByUserUsernameOrderByStartTimeDesc(username);
+    }
+
     public List<Booking> findBookingsForItem(Long itemID) {
         itemRepo.findById(itemID).orElseThrow(() -> new EntityNotFoundException("Item not found " + itemID));
 
