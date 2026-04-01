@@ -1,5 +1,7 @@
 package com.martin.demo.dto;
 
+import com.martin.demo.model.BookingStatus;
+
 import java.time.LocalDateTime;
 
 public class BookingDto {
@@ -9,17 +11,19 @@ public class BookingDto {
     private String username;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private BookingStatus status;
 
     public BookingDto() {
     }
 
-    public BookingDto(Long id, Long itemId, Long userId, String username, LocalDateTime startTime, LocalDateTime endTime) {
+    public BookingDto(Long id, Long itemId, Long userId, String username, LocalDateTime startTime, LocalDateTime endTime, BookingStatus status) {
         this.id = id;
         this.itemId = itemId;
         this.userId = userId;
         this.username = username;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.status = status;
     }
 
     public Long getId() {
@@ -68,5 +72,13 @@ public class BookingDto {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public BookingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BookingStatus status) {
+        this.status = status;
     }
 }

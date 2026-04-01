@@ -36,7 +36,8 @@ public class BookingController {
                         b.getUser().getId(),
                         b.getUser().getUsername(),
                         b.getStartTime(),
-                        b.getEndTime()
+                        b.getEndTime(),
+                        b.getStatus()
                 ))
                 .toList();
     }
@@ -52,7 +53,25 @@ public class BookingController {
                 b.getUser().getId(),
                 b.getUser().getUsername(),
                 b.getStartTime(),
-                b.getEndTime()
+                b.getEndTime(),
+                b.getStatus()
+        );
+    }
+
+    @PostMapping("/{bookingId}/approve")
+    public BookingDto approveBooking(
+            @PathVariable Long itemId,
+            @PathVariable Long bookingId,
+            Principal principal) {
+        Booking b = bookingService.approveBooking(itemId, bookingId, principal.getName());
+        return new BookingDto(
+                b.getId(),
+                b.getItem().getId(),
+                b.getUser().getId(),
+                b.getUser().getUsername(),
+                b.getStartTime(),
+                b.getEndTime(),
+                b.getStatus()
         );
     }
 

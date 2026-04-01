@@ -86,6 +86,40 @@ public class BookingService {
         return savedBooking;
     }
 
+    public Booking approveBooking(Long itemId, Long bookingId, String username) {
+        Items item = itemRepo.findById(itemId)
+                .orElseThrow(() -> new EntityNotFoundException("Item ikke funnet " + itemId));
+
+        Booking booking = repo.findById(bookingId)
+                .orElseThrow(() -> new EntityNotFoundException("Booking ikke funnet " + bookingId));
+
+        if (!booking.getItem().getId().equals(itemId)) {
+            throw new EntityNotFoundException("Booking tilhører ikke item " + itemId);
+        }
+
+        String ownerUsername = item.getUser() != null ? item.getUser().getUsername() : null;
+        if (ownerUsername == null || !ownerUsername.equals(username)) {
+            throw new AccessDeniedException("Kun eier kan godkjenne booking");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Booking er ikke i PENDING status");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+        Booking saved = repo.save(booking);
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM HH:mm");
+        notificationService.notifyUser(
+                booking.getUser().getId(),
+                "Bookingen din for " + item.getName()
+                        + " (" + booking.getStartTime().format(fmt) + " – " + booking.getEndTime().format(fmt) + ") er godkjent!",
+                "/items/" + item.getId() + "/bookings/" + booking.getId()
+        );
+
+        return saved;
+    }
+
     public void cancelBooking(Long itemId, Long bookingId, String username) {
 
         // 1) Ensure item exists
