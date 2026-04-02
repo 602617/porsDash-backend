@@ -18,6 +18,7 @@ public class Items {
     @Column(name = "image_data", columnDefinition = "bytea")
     private byte[] imageData;
 
+
     @Column(name = "image_content_type")
     private String imageContentType;
 
