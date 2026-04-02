@@ -6,6 +6,7 @@ public class ItemDto {
     private Long id;
     private String name;
     private String username;
+    private String imageUrl;
 
     public ItemDto() {
     }
@@ -14,6 +15,7 @@ public class ItemDto {
         this.id = item.getId();
         this.name = item.getName();
         this.username = item.getUser() != null ? item.getUser().getUsername() : "unknown";
+        this.imageUrl = item.getImageData() != null ? "/api/items/" + item.getId() + "/image" : null;
     }
 
     public Long getId() {
@@ -26,5 +28,9 @@ public class ItemDto {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
     }
 }

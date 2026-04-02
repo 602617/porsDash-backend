@@ -8,11 +8,14 @@ import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.ItemRepository;
 import com.martin.demo.service.ItemService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -88,11 +91,47 @@ public class ItemController {
 
     @GetMapping("/{itemId}")
     public ItemDto getItemById(@PathVariable Long itemId, Principal principal) {
-        // if you need auth: you can load the user from principal here
         return itemService
                 .findById(itemId)
                 .map(ItemDto::new)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item ikke funnet"));
+    }
+
+    @PostMapping("/{itemId}/image")
+    public ResponseEntity<?> uploadImage(
+            @PathVariable Long itemId,
+            @RequestParam("file") MultipartFile file,
+            Principal principal) throws IOException {
+
+        AppUser user = appUserRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Items item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+
+        if (!item.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Du eier ikke dette produktet");
+        }
+
+        item.setImageData(file.getBytes());
+        item.setImageContentType(file.getContentType());
+        itemRepository.save(item);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{itemId}/image")
+    public ResponseEntity<byte[]> getImage(@PathVariable Long itemId) {
+        Items item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+
+        if (item.getImageData() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(item.getImageContentType()))
+                .body(item.getImageData());
     }
 
 }

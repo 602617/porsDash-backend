@@ -114,20 +114,46 @@ public class EventService {
         AppUser user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        // Finn eksisterende påmelding om den finnes
-        EventAttendance att = attendanceRepo
-                .findByEventIdAndUserId(eventId, user.getId())
-                .orElseGet(() -> {
-                    EventAttendance n = new EventAttendance();
-                    n.setEvent(ev);
-                    n.setUser(user);
-                    return n;
-                });
+        Optional<EventAttendance> existing = attendanceRepo.findByEventIdAndUserId(eventId, user.getId());
+        EventAttendance att = existing.orElseGet(() -> {
+            EventAttendance n = new EventAttendance();
+            n.setEvent(ev);
+            n.setUser(user);
+            return n;
+        });
 
-        att.setStatus(req.getStatus());
+        AttendanceStatus previousStatus = att.getStatus();
+        AttendanceStatus newStatus = req.getStatus();
+
+        att.setStatus(newStatus);
         att.setComment(req.getComment());
         att.setUpdatedAt(LocalDateTime.now());
-        return attendanceRepo.save(att);
+        EventAttendance saved = attendanceRepo.save(att);
+
+        AppUser owner = ev.getCreatedBy();
+        boolean isOwnerResponding = owner.getId().equals(user.getId());
+        boolean firstResponse = previousStatus == null || previousStatus == AttendanceStatus.INVITED;
+        boolean changedResponse = previousStatus != null
+                && previousStatus != AttendanceStatus.INVITED
+                && previousStatus != newStatus;
+
+        if (!isOwnerResponding && (firstResponse || changedResponse)) {
+            String answerText = switch (newStatus) {
+                case CAN -> "kan delta";
+                case CANNOT -> "kan ikke delta";
+                case INVITED -> "er invitert";
+            };
+            String actionText = firstResponse ? "svarte pa invitasjonen" : "endret svaret sitt";
+
+            notificationService.notifyUser(
+                    owner.getId(),
+                    user.getUsername() + " " + actionText + ": " + answerText
+                            + " (" + ev.getTitle() + ")",
+                    "/events/" + ev.getId()
+            );
+        }
+
+        return saved;
     }
 
     public EventDetailDto getDetail(Long eventId) {
@@ -135,7 +161,7 @@ public class EventService {
         Event ev = eventRepo.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event ikke funnet: " + eventId));
 
-        // 2) Hent alle påmeldinger for dette event
+        // 2) Hent alle pÃ¥meldinger for dette event
         List<EventAttendance> attendees =
                 attendanceRepo.findByEventId(eventId);
 
@@ -143,3 +169,4 @@ public class EventService {
         return new EventDetailDto(ev, attendees);
     }
 }
+
