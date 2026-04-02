@@ -70,6 +70,28 @@ public class ItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Item created");
     }
 
+    @PutMapping("/{itemId}")
+    public ResponseEntity<ItemDto> updateItem(
+            @PathVariable Long itemId,
+            @RequestBody CreateItemRequest request,
+            Principal principal) {
+
+        AppUser user = appUserRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Items item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+
+        if (!item.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Du eier ikke dette produktet");
+        }
+
+        item.setName(request.getName());
+        itemRepository.save(item);
+
+        return ResponseEntity.ok(new ItemDto(item));
+    }
+
     @DeleteMapping("/{itemId}")
     public ResponseEntity<?> deleteItem(@PathVariable Long itemId, Principal principal) {
 
