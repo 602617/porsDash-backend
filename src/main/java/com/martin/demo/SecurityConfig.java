@@ -56,7 +56,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/events/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/events/*/attendance").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
-                        .requestMatchers(HttpMethod.DELETE,"/api/events/eventId").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/events/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/*").authenticated()
 
                         .requestMatchers("/api/loans/**").authenticated()
 

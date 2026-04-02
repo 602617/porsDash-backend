@@ -62,6 +62,15 @@ public class EventController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new AttendanceDto(saved));
     }
 
+    @PutMapping("/{eventId}")
+    public ResponseEntity<Event> updateEvent(
+            @PathVariable Long eventId,
+            @RequestBody EventDto dto,
+            Principal principal) {
+        Event updated = eventService.updateEvent(eventId, dto, principal.getName());
+        return ResponseEntity.ok(updated);
+    }
+
     @DeleteMapping("/{eventId}")
     public ResponseEntity<?> deleteEvent(@PathVariable Long eventId, Principal principal) {
         AppUser user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new UsernameNotFoundException("username not found"));

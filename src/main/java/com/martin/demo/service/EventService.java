@@ -76,6 +76,23 @@ public class EventService {
         return saved;
     }
 
+    public Event updateEvent(Long eventId, EventDto dto, String username) {
+        Event ev = eventRepo.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found"));
+
+        if (!ev.getCreatedBy().getUsername().equals(username)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Du eier ikke dette eventet");
+        }
+
+        ev.setTitle(dto.getTitle());
+        ev.setDescription(dto.getDescription());
+        ev.setLocation(dto.getLocation());
+        ev.setStartTime(dto.getStartTime());
+        ev.setEndTime(dto.getEndTime());
+        return eventRepo.save(ev);
+    }
+
         public void deleteEvent(Long eventId, String username) throws AccessDeniedException {
         Event ev = eventRepo.findById(eventId).orElseThrow(() -> new EntityNotFoundException("event not found"));
 
