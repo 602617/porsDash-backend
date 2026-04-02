@@ -15,7 +15,6 @@ public class Items {
 
     private String name;
 
-    @Lob
     @Column(name = "image_data", columnDefinition = "bytea")
     private byte[] imageData;
 
