@@ -94,6 +94,23 @@ public class BookingController {
                 .body(saved);
     }
 
+    @PostMapping("/{bookingId}/decline")
+    public BookingDto declineBooking(
+            @PathVariable Long itemId,
+            @PathVariable Long bookingId,
+            Principal principal) {
+        Booking b = bookingService.declineBooking(itemId, bookingId, principal.getName());
+        return new BookingDto(
+                b.getId(),
+                b.getItem().getId(),
+                b.getUser().getId(),
+                b.getUser().getUsername(),
+                b.getStartTime(),
+                b.getEndTime(),
+                b.getStatus()
+        );
+    }
+
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(
             @PathVariable Long itemId,
