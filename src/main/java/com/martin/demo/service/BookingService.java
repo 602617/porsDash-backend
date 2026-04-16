@@ -153,7 +153,7 @@ public class BookingService {
         Items item = ensureItemExists(itemId);
         Booking booking = ensureBookingBelongsToItem(itemId, bookingId);
 
-        ensureOwner(item, username, "Kun eier kan avslå booking");
+        ensureOwner(item, username, "Kun eier kan avslaa booking");
 
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new IllegalStateException("Booking er ikke i PENDING status");
@@ -167,7 +167,7 @@ public class BookingService {
         notificationService.notifyUser(
                 booking.getUser().getId(),
                 "Bookingen din for " + item.getName()
-                        + " (" + booking.getStartTime().format(fmt) + " - " + booking.getEndTime().format(fmt) + ") ble avslått.",
+                        + " (" + booking.getStartTime().format(fmt) + " - " + booking.getEndTime().format(fmt) + ") ble avslaatt.",
                 "/items/" + item.getId() + "/bookings/" + booking.getId()
         );
 
@@ -240,10 +240,10 @@ public class BookingService {
 
     private void ensureTimeRangeValid(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null) {
-            throw new IllegalStateException("Start og sluttid ma være satt");
+            throw new IllegalStateException("Start og sluttid ma vaere satt");
         }
         if (!end.isAfter(start)) {
-            throw new IllegalStateException("Sluttid ma være etter starttid");
+            throw new IllegalStateException("Sluttid ma vaere etter starttid");
         }
     }
 
