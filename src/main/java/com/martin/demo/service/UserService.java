@@ -23,4 +23,10 @@ public class UserService {
                 .map(u -> new UserDto(u.getId(), u.getUsername()))
                 .toList();
     }
+
+    public List<UserDto> search(String q) {
+        return userRepo.findByUsernameContainingIgnoreCase(q).stream()
+                .map(u -> new UserDto(u.getId(), u.getUsername()))
+                .toList();
+    }
 }

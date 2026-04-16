@@ -1,12 +1,15 @@
 package com.martin.demo.service;
 
 import com.martin.demo.auth.AppUser;
+import com.martin.demo.dto.CreateLoanDto;
 import com.martin.demo.dto.CreatePaymentDto;
+import com.martin.demo.dto.LoanListDto;
 import com.martin.demo.dto.LoanPaymentDto;
 import com.martin.demo.dto.LoanSummaryDto;
 import com.martin.demo.dto.UpdatePaymentDto;
 import com.martin.demo.model.Loan;
 import com.martin.demo.model.LoanPayment;
+import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.LoanPaymentRepository;
 import com.martin.demo.repository.LoanRepository;
@@ -25,11 +28,14 @@ public class LoanService {
     private final LoanRepository loans;
     private final LoanPaymentRepository payments;
     private final AppUserRepository users;
+    private final NotificationService notificationService;
 
-    public LoanService(LoanRepository loans, LoanPaymentRepository payments, AppUserRepository users) {
+    public LoanService(LoanRepository loans, LoanPaymentRepository payments,
+                       AppUserRepository users, NotificationService notificationService) {
         this.loans = loans;
         this.payments = payments;
         this.users = users;
+        this.notificationService = notificationService;
     }
 
     private void assertAccess(Loan loan, String username) {
@@ -60,10 +66,17 @@ public class LoanService {
         if (!ok) throw new AccessDeniedException("Not allowed");
     }
 
+    private void notifyOtherParty(Loan loan, AppUser me, String message) {
+        AppUser other = loan.getBorrower().getId().equals(me.getId())
+                ? loan.getLender()
+                : loan.getBorrower();
+        notificationService.notifyUser(other.getId(), message, "/loans/" + loan.getId());
+    }
+
     public LoanSummaryDto getLoan(Long loanId, String username) {
 
         // Load loan
-        Loan loan = loans.findById(loanId)
+        Loan loan = loans.findByIdAndActiveTrue(loanId)
                 .orElseThrow(() -> new EntityNotFoundException("Loan not found"));
 
         // 🔐 Access check (borrower OR lender OR shared)
@@ -102,6 +115,11 @@ public class LoanService {
         p.setCreatedBy(me);
 
         LoanPayment saved = payments.save(p);
+
+        String loanName = loan.getTitle() != null ? loan.getTitle() : "lån";
+        notifyOtherParty(loan, me,
+                me.getUsername() + " la til en betaling på " + dto.amount() + " kr (" + loanName + ")");
+
         return LoanPaymentDto.from(saved);
     }
 
@@ -120,7 +138,13 @@ public class LoanService {
         if (dto.note() != null) p.setNote(dto.note());
         if (dto.paidAt() != null) p.setPaidAt(dto.paidAt());
 
-        return LoanPaymentDto.from(payments.save(p));
+        LoanPaymentDto result = LoanPaymentDto.from(payments.save(p));
+
+        String loanName = loan.getTitle() != null ? loan.getTitle() : "lån";
+        notifyOtherParty(loan, me,
+                me.getUsername() + " oppdaterte en betaling (" + loanName + ")");
+
+        return result;
     }
 
     public void deletePayment(Long paymentId, String username) {
@@ -131,12 +155,68 @@ public class LoanService {
         AppUser me = me(username);
         assertParticipant(loan, me);
 
-
-
+        String loanName = loan.getTitle() != null ? loan.getTitle() : "lån";
         payments.delete(p);
+
+        notifyOtherParty(loan, me,
+                me.getUsername() + " slettet en betaling (" + loanName + ")");
     }
 
+    public LoanSummaryDto createLoan(CreateLoanDto dto, String username) {
+        AppUser me = me(username);
+        AppUser other = users.findByUsername(dto.otherUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + dto.otherUsername()));
 
+        if (me.getId().equals(other.getId())) {
+            throw new IllegalArgumentException("Du kan ikke opprette et lån med deg selv");
+        }
+
+        Loan loan = new Loan();
+        loan.setPrincipalAmount(dto.amount());
+        loan.setTitle(dto.title());
+
+        if ("BORROWER".equalsIgnoreCase(dto.myRole())) {
+            loan.setBorrower(me);
+            loan.setLender(other);
+        } else {
+            loan.setLender(me);
+            loan.setBorrower(other);
+        }
+
+        Loan saved = loans.save(loan);
+
+        String loanName = saved.getTitle() != null ? saved.getTitle() : "lån";
+        notificationService.notifyUser(other.getId(),
+                me.getUsername() + " opprettet et lån med deg: " + loanName
+                        + " (" + saved.getPrincipalAmount() + " kr)",
+                "/loans/" + saved.getId());
+
+        List<LoanPayment> history = payments.findByLoanIdOrderByPaidAtDesc(saved.getId());
+        BigDecimal sumPaid = BigDecimal.ZERO;
+        BigDecimal left = saved.getPrincipalAmount();
+        return LoanSummaryDto.from(saved, sumPaid, left, history);
+    }
+
+    public void deleteLoan(Long loanId, String username) {
+        Loan loan = loans.findByIdAndActiveTrue(loanId)
+                .orElseThrow(() -> new EntityNotFoundException("Loan not found"));
+
+        AppUser me = me(username);
+        assertParticipant(loan, me);
+
+        loan.setActive(false);
+        loans.save(loan);
+
+        String loanName = loan.getTitle() != null ? loan.getTitle() : "lån";
+        notifyOtherParty(loan, me,
+                me.getUsername() + " arkiverte lånet: " + loanName);
+    }
+
+    public List<LoanListDto> listLoans(String username) {
+        return loans.findActiveLoansForUser(username).stream()
+                .map(LoanListDto::from)
+                .toList();
+    }
 
 
 

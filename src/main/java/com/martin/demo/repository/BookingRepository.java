@@ -19,7 +19,21 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findConflicting(
             @Param("itemId") Long itemId,
             @Param("start") LocalDateTime start,
-            @Param("end")    LocalDateTime end);
+            @Param("end") LocalDateTime end);
+
+    @Query("""
+    SELECT b FROM Booking b
+     WHERE b.item.id = :itemId
+       AND b.status = 'CONFIRMED'
+       AND b.id <> :bookingId
+       AND b.startTime < :end
+       AND b.endTime   > :start
+  """)
+    List<Booking> findConflictingExcludingBooking(
+            @Param("itemId") Long itemId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("bookingId") Long bookingId);
 
     List<Booking> findByItemId(Long itemId);
 

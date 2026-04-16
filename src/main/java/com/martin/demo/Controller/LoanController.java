@@ -1,12 +1,16 @@
 package com.martin.demo.Controller;
 
+import com.martin.demo.dto.CreateLoanDto;
 import com.martin.demo.dto.CreatePaymentDto;
+import com.martin.demo.dto.LoanListDto;
 import com.martin.demo.dto.LoanPaymentDto;
 import com.martin.demo.dto.LoanSummaryDto;
 import com.martin.demo.dto.UpdatePaymentDto;
 import com.martin.demo.service.LoanService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/loans")
@@ -16,6 +20,21 @@ public class LoanController {
 
     public LoanController(LoanService service) {
         this.service = service;
+    }
+
+    @GetMapping
+    public List<LoanListDto> listLoans(Authentication auth) {
+        return service.listLoans(auth.getName());
+    }
+
+    @PostMapping
+    public LoanSummaryDto createLoan(@RequestBody CreateLoanDto dto, Authentication auth) {
+        return service.createLoan(dto, auth.getName());
+    }
+
+    @DeleteMapping("/{loanId}")
+    public void deleteLoan(@PathVariable Long loanId, Authentication auth) {
+        service.deleteLoan(loanId, auth.getName());
     }
 
     @GetMapping("/{loanId}")

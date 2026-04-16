@@ -27,6 +27,8 @@ public class Loan {
 
     private Instant createdAt = Instant.now();
 
+    private boolean active = true;
+
     @ManyToMany
     @JoinTable(
             name = "loan_access",
@@ -90,5 +92,13 @@ public class Loan {
 
     public void setAllowedUsers(Set<AppUser> allowedUsers) {
         this.allowedUsers = allowedUsers;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

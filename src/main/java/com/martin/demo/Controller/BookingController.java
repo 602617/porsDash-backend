@@ -27,18 +27,22 @@ public class BookingController {
         this.appUserRepository = appUserRepository;
     }
 
+    private BookingDto toDto(Booking booking) {
+        return new BookingDto(
+                booking.getId(),
+                booking.getItem().getId(),
+                booking.getUser().getId(),
+                booking.getUser().getUsername(),
+                booking.getStartTime(),
+                booking.getEndTime(),
+                booking.getStatus()
+        );
+    }
+
     @GetMapping
     public List<BookingDto> listBookings(@PathVariable Long itemId) {
         return bookingService.findBookingsForItem(itemId).stream()
-                .map(b -> new BookingDto(
-                        b.getId(),
-                        b.getItem().getId(),
-                        b.getUser().getId(),
-                        b.getUser().getUsername(),
-                        b.getStartTime(),
-                        b.getEndTime(),
-                        b.getStatus()
-                ))
+                .map(this::toDto)
                 .toList();
     }
 
@@ -46,16 +50,7 @@ public class BookingController {
     public BookingDto getBooking(
             @PathVariable Long itemId,
             @PathVariable Long bookingId) {
-        Booking b = bookingService.findBooking(itemId, bookingId);
-        return new BookingDto(
-                b.getId(),
-                b.getItem().getId(),
-                b.getUser().getId(),
-                b.getUser().getUsername(),
-                b.getStartTime(),
-                b.getEndTime(),
-                b.getStatus()
-        );
+        return toDto(bookingService.findBooking(itemId, bookingId));
     }
 
     @PostMapping("/{bookingId}/approve")
@@ -63,16 +58,7 @@ public class BookingController {
             @PathVariable Long itemId,
             @PathVariable Long bookingId,
             Principal principal) {
-        Booking b = bookingService.approveBooking(itemId, bookingId, principal.getName());
-        return new BookingDto(
-                b.getId(),
-                b.getItem().getId(),
-                b.getUser().getId(),
-                b.getUser().getUsername(),
-                b.getStartTime(),
-                b.getEndTime(),
-                b.getStatus()
-        );
+        return toDto(bookingService.approveBooking(itemId, bookingId, principal.getName()));
     }
 
     @PostMapping
@@ -94,21 +80,29 @@ public class BookingController {
                 .body(saved);
     }
 
+    @PutMapping("/{bookingId}")
+    public BookingDto updateBooking(
+            @PathVariable Long itemId,
+            @PathVariable Long bookingId,
+            @RequestBody BookingRequest req,
+            Principal principal
+    ) {
+        Booking updated = bookingService.updateBooking(
+                itemId,
+                bookingId,
+                req.getStartTime(),
+                req.getEndTime(),
+                principal.getName()
+        );
+        return toDto(updated);
+    }
+
     @PostMapping("/{bookingId}/decline")
     public BookingDto declineBooking(
             @PathVariable Long itemId,
             @PathVariable Long bookingId,
             Principal principal) {
-        Booking b = bookingService.declineBooking(itemId, bookingId, principal.getName());
-        return new BookingDto(
-                b.getId(),
-                b.getItem().getId(),
-                b.getUser().getId(),
-                b.getUser().getUsername(),
-                b.getStartTime(),
-                b.getEndTime(),
-                b.getStatus()
-        );
+        return toDto(bookingService.declineBooking(itemId, bookingId, principal.getName()));
     }
 
     @DeleteMapping("/{bookingId}")

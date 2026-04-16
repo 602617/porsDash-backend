@@ -90,20 +90,74 @@ public class EventService {
         ev.setLocation(dto.getLocation());
         ev.setStartTime(dto.getStartTime());
         ev.setEndTime(dto.getEndTime());
-        return eventRepo.save(ev);
+        Event saved = eventRepo.save(ev);
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM HH:mm");
+
+        // Notify existing attendees about the update
+        List<EventAttendance> attendees = attendanceRepo.findByEventId(eventId);
+        for (EventAttendance att : attendees) {
+            if (!att.getUser().getId().equals(saved.getCreatedBy().getId())) {
+                notificationService.notifyUser(
+                        att.getUser().getId(),
+                        username + " oppdaterte eventet: " + saved.getTitle()
+                                + " (" + saved.getStartTime().format(fmt) + ")",
+                        "/events/" + saved.getId()
+                );
+            }
+        }
+
+        // Invite any new users added during update
+        if (dto.getInvitedUserIds() != null) {
+            AppUser creator = saved.getCreatedBy();
+            for (Long userId : dto.getInvitedUserIds()) {
+                AppUser invitee = userRepo.findById(userId).orElse(null);
+                if (invitee == null || invitee.getId().equals(creator.getId())) continue;
+
+                boolean alreadyInvited = attendees.stream()
+                        .anyMatch(a -> a.getUser().getId().equals(invitee.getId()));
+                if (alreadyInvited) continue;
+
+                EventAttendance invite = new EventAttendance();
+                invite.setEvent(saved);
+                invite.setUser(invitee);
+                invite.setStatus(AttendanceStatus.INVITED);
+                invite.setUpdatedAt(LocalDateTime.now());
+                attendanceRepo.save(invite);
+
+                notificationService.notifyUser(
+                        invitee.getId(),
+                        creator.getUsername() + " inviterte deg til " + saved.getTitle()
+                                + " (" + saved.getStartTime().format(fmt) + ")",
+                        "/events/" + saved.getId()
+                );
+            }
+        }
+
+        return saved;
     }
 
-        public void deleteEvent(Long eventId, String username) throws AccessDeniedException {
+    public void deleteEvent(Long eventId, String username) throws AccessDeniedException {
         Event ev = eventRepo.findById(eventId).orElseThrow(() -> new EntityNotFoundException("event not found"));
 
         if (!ev.getCreatedBy().getUsername().equals(username)) {
             throw new AccessDeniedException("Du eier ikke dette eventet");
         }
 
-        eventRepo.delete(ev);
-
-
+        // Notify all attendees before deleting
+        List<EventAttendance> attendees = attendanceRepo.findByEventId(eventId);
+        for (EventAttendance att : attendees) {
+            if (!att.getUser().getId().equals(ev.getCreatedBy().getId())) {
+                notificationService.notifyUser(
+                        att.getUser().getId(),
+                        username + " avlyste eventet: " + ev.getTitle(),
+                        "/events"
+                );
+            }
         }
+
+        eventRepo.delete(ev);
+    }
 
     public List<Event> listAll(String username) {
         return eventRepo.findVisibleToUser(username);
