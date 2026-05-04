@@ -48,8 +48,8 @@ public class EventController {
 
     /** Detaljer om ett arrangement, inkl. påmeldinger*/
     @GetMapping("/{eventId}")
-    public EventDetailDto eventDetail(@PathVariable Long eventId) {
-        return eventService.getDetail(eventId);
+    public EventDetailDto eventDetail(@PathVariable Long eventId, Principal principal) {
+        return eventService.getDetail(eventId, principal.getName());
     }
 
     /** Påmelding / oppdater status */

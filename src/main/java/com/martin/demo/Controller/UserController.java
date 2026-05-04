@@ -30,8 +30,8 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserDto> listAllUsers() {
-        return userService.listAll();
+    public List<UserDto> listAllUsers(Authentication authentication) {
+        return userService.listAll(authentication.getName());
     }
 
     @GetMapping("/search")

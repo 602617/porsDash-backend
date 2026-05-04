@@ -6,6 +6,7 @@ import com.martin.demo.dto.ItemDto;
 import com.martin.demo.model.Items;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.ItemRepository;
+import com.martin.demo.service.FriendshipService;
 import com.martin.demo.service.ItemService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,18 +28,21 @@ import java.util.stream.Collectors;
 public class ItemController {
     private final ItemRepository itemRepository;
     private final AppUserRepository appUserRepository;
-
     private final ItemService itemService;
+    private final FriendshipService friendshipService;
 
-    public ItemController(ItemRepository itemRepository, AppUserRepository appUserRepository, ItemService itemService) {
+    public ItemController(ItemRepository itemRepository, AppUserRepository appUserRepository,
+                          ItemService itemService, FriendshipService friendshipService) {
         this.itemRepository = itemRepository;
         this.appUserRepository = appUserRepository;
         this.itemService = itemService;
+        this.friendshipService = friendshipService;
     }
 
     @GetMapping
-    public List<ItemDto> getAllItems() {
-        return itemRepository.findAll()
+    public List<ItemDto> getAllItems(Principal principal) {
+        Set<Long> friendIds = friendshipService.getFriendAndSelfIds(principal.getName());
+        return itemRepository.findByUserIdIn(friendIds)
                 .stream()
                 .map(ItemDto::new)
                 .collect(Collectors.toList());
@@ -113,10 +118,12 @@ public class ItemController {
 
     @GetMapping("/{itemId}")
     public ItemDto getItemById(@PathVariable Long itemId, Principal principal) {
-        return itemService
-                .findById(itemId)
-                .map(ItemDto::new)
+        Items item = itemService.findById(itemId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item ikke funnet"));
+        if (!friendshipService.areFriends(principal.getName(), item.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Du har ikke tilgang til dette produktet");
+        }
+        return new ItemDto(item);
     }
 
     @PostMapping("/{itemId}/image")
@@ -143,9 +150,13 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}/image")
-    public ResponseEntity<byte[]> getImage(@PathVariable Long itemId) {
+    public ResponseEntity<byte[]> getImage(@PathVariable Long itemId, Principal principal) {
         Items item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+
+        if (!friendshipService.areFriends(principal.getName(), item.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Du har ikke tilgang til dette produktet");
+        }
 
         if (item.getImageData() == null) {
             return ResponseEntity.notFound().build();

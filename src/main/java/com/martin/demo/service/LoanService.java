@@ -29,13 +29,16 @@ public class LoanService {
     private final LoanPaymentRepository payments;
     private final AppUserRepository users;
     private final NotificationService notificationService;
+    private final FriendshipService friendshipService;
 
     public LoanService(LoanRepository loans, LoanPaymentRepository payments,
-                       AppUserRepository users, NotificationService notificationService) {
+                       AppUserRepository users, NotificationService notificationService,
+                       FriendshipService friendshipService) {
         this.loans = loans;
         this.payments = payments;
         this.users = users;
         this.notificationService = notificationService;
+        this.friendshipService = friendshipService;
     }
 
     private void assertAccess(Loan loan, String username) {
@@ -169,6 +172,10 @@ public class LoanService {
 
         if (me.getId().equals(other.getId())) {
             throw new IllegalArgumentException("Du kan ikke opprette et lån med deg selv");
+        }
+
+        if (!friendshipService.areFriends(username, other.getId())) {
+            throw new AccessDeniedException("Du kan bare opprette lån med venner");
         }
 
         Loan loan = new Loan();

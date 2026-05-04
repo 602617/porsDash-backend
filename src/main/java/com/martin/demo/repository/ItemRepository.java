@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ItemRepository extends JpaRepository<Items,Long> {
     List<Items> findByUser(AppUser user);
+    List<Items> findByUserIdIn(java.util.Set<Long> userIds);
 }

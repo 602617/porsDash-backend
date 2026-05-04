@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class EventService {
@@ -27,15 +28,18 @@ public class EventService {
     private final EventAttendanceRepository attendanceRepo;
     private final AppUserRepository userRepo;
     private final NotificationService notificationService;
+    private final FriendshipService friendshipService;
 
     public EventService(EventRepository eventRepo,
                         EventAttendanceRepository attendanceRepo,
                         AppUserRepository userRepo,
-                        NotificationService notificationService) {
+                        NotificationService notificationService,
+                        FriendshipService friendshipService) {
         this.eventRepo = eventRepo;
         this.attendanceRepo = attendanceRepo;
         this.userRepo = userRepo;
         this.notificationService = notificationService;
+        this.friendshipService = friendshipService;
     }
 
     public Event createEvent(EventDto dto, String username) {
@@ -52,8 +56,10 @@ public class EventService {
         Event saved = eventRepo.save(ev);
 
         if (dto.getInvitedUserIds() != null) {
+            Set<Long> friendIds = friendshipService.getFriendAndSelfIds(username);
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM HH:mm");
             for (Long userId : dto.getInvitedUserIds()) {
+                if (!friendIds.contains(userId)) continue;
                 AppUser invitee = userRepo.findById(userId).orElse(null);
                 if (invitee == null || invitee.getId().equals(creator.getId())) continue;
 
@@ -107,10 +113,12 @@ public class EventService {
             }
         }
 
-        // Invite any new users added during update
+        // Invite any new users added during update (only friends)
         if (dto.getInvitedUserIds() != null) {
+            Set<Long> friendIds = friendshipService.getFriendAndSelfIds(username);
             AppUser creator = saved.getCreatedBy();
             for (Long userId : dto.getInvitedUserIds()) {
+                if (!friendIds.contains(userId)) continue;
                 AppUser invitee = userRepo.findById(userId).orElse(null);
                 if (invitee == null || invitee.getId().equals(creator.getId())) continue;
 
@@ -210,16 +218,22 @@ public class EventService {
         return saved;
     }
 
-    public EventDetailDto getDetail(Long eventId) {
-        // 1) Finn event, kast 404 om ikke funnet
+    public EventDetailDto getDetail(Long eventId, String username) {
         Event ev = eventRepo.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event ikke funnet: " + eventId));
 
-        // 2) Hent alle pÃ¥meldinger for dette event
-        List<EventAttendance> attendees =
-                attendanceRepo.findByEventId(eventId);
+        AppUser user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        // 3) Bygg og returner DTO
+        boolean isCreator = ev.getCreatedBy().getId().equals(user.getId());
+        boolean isInvited = attendanceRepo.findByEventIdAndUserId(eventId, user.getId()).isPresent();
+
+        if (!isCreator && !isInvited) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Du har ikke tilgang til dette eventet");
+        }
+
+        List<EventAttendance> attendees = attendanceRepo.findByEventId(eventId);
         return new EventDetailDto(ev, attendees);
     }
 }

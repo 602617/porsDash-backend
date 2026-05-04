@@ -3,11 +3,14 @@ package com.martin.demo.Controller;
 import com.martin.demo.dto.AvailabilityRequest;
 import com.martin.demo.dto.UnavailabilityDto;
 import com.martin.demo.model.ItemUnavailability;
+import com.martin.demo.model.Items;
+import com.martin.demo.repository.ItemRepository;
+import com.martin.demo.service.FriendshipService;
 import com.martin.demo.service.ItemUnavailabilityService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.util.List;
@@ -17,13 +20,24 @@ import java.util.List;
 public class ItemUnavailabilityController {
 
     private final ItemUnavailabilityService service;
+    private final ItemRepository itemRepository;
+    private final FriendshipService friendshipService;
 
-    public ItemUnavailabilityController(ItemUnavailabilityService service) {
+    public ItemUnavailabilityController(ItemUnavailabilityService service,
+                                        ItemRepository itemRepository,
+                                        FriendshipService friendshipService) {
         this.service = service;
+        this.itemRepository = itemRepository;
+        this.friendshipService = friendshipService;
     }
 
     @GetMapping
-    public List<UnavailabilityDto> list(@PathVariable Long itemId) {
+    public List<UnavailabilityDto> list(@PathVariable Long itemId, Principal principal) {
+        Items item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+        if (!friendshipService.areFriends(principal.getName(), item.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Du har ikke tilgang");
+        }
         return service.listBlocks(itemId).stream()
                 .map(slot -> new UnavailabilityDto(
                         slot.getId(),

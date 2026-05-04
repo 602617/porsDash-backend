@@ -4,12 +4,16 @@ import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.BookingDto;
 import com.martin.demo.dto.BookingRequest;
 import com.martin.demo.model.Booking;
+import com.martin.demo.model.Items;
 import com.martin.demo.repository.AppUserRepository;
+import com.martin.demo.repository.ItemRepository;
 import com.martin.demo.service.BookingService;
+import com.martin.demo.service.FriendshipService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.util.List;
@@ -20,11 +24,23 @@ public class BookingController {
 
     private final BookingService bookingService;
     private final AppUserRepository appUserRepository;
+    private final ItemRepository itemRepository;
+    private final FriendshipService friendshipService;
 
-
-    public BookingController(BookingService bookingService, AppUserRepository appUserRepository) {
+    public BookingController(BookingService bookingService, AppUserRepository appUserRepository,
+                             ItemRepository itemRepository, FriendshipService friendshipService) {
         this.bookingService = bookingService;
         this.appUserRepository = appUserRepository;
+        this.itemRepository = itemRepository;
+        this.friendshipService = friendshipService;
+    }
+
+    private void assertFriendOfItemOwner(Long itemId, String username) {
+        Items item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+        if (!friendshipService.areFriends(username, item.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Du har ikke tilgang til dette produktet");
+        }
     }
 
     private BookingDto toDto(Booking booking) {
@@ -40,7 +56,8 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<BookingDto> listBookings(@PathVariable Long itemId) {
+    public List<BookingDto> listBookings(@PathVariable Long itemId, Principal principal) {
+        assertFriendOfItemOwner(itemId, principal.getName());
         return bookingService.findBookingsForItem(itemId).stream()
                 .map(this::toDto)
                 .toList();
@@ -49,7 +66,9 @@ public class BookingController {
     @GetMapping("/{bookingId}")
     public BookingDto getBooking(
             @PathVariable Long itemId,
-            @PathVariable Long bookingId) {
+            @PathVariable Long bookingId,
+            Principal principal) {
+        assertFriendOfItemOwner(itemId, principal.getName());
         return toDto(bookingService.findBooking(itemId, bookingId));
     }
 
@@ -66,6 +85,7 @@ public class BookingController {
             @PathVariable Long itemId,
             @RequestBody BookingRequest req,
             Principal principal) {
+        assertFriendOfItemOwner(itemId, principal.getName());
         AppUser currentUser = appUserRepository.findByUsername(principal.getName()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         Booking saved = bookingService.createBooking(
