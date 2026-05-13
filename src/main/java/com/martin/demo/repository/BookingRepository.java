@@ -38,4 +38,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByItemId(Long itemId);
 
     List<Booking> findByUserUsernameOrderByStartTimeDesc(String username);
+
+    @Query("""
+    SELECT b FROM Booking b
+     WHERE b.item.user.username = :ownerUsername
+       AND b.endTime > :now
+       AND b.status IN ('PENDING', 'CONFIRMED')
+     ORDER BY b.startTime ASC
+  """)
+    List<Booking> findActiveRequestsForOwner(
+            @Param("ownerUsername") String ownerUsername,
+            @Param("now") LocalDateTime now);
 }

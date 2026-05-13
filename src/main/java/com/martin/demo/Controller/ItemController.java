@@ -19,13 +19,15 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
-import java.util.Optional;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/items")
 public class ItemController {
+    private static final MediaType DEFAULT_IMAGE_MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
+
     private final ItemRepository itemRepository;
     private final AppUserRepository appUserRepository;
     private final ItemService itemService;
@@ -143,7 +145,12 @@ public class ItemController {
         }
 
         item.setImageData(file.getBytes());
-        item.setImageContentType(file.getContentType());
+        String contentType = file.getContentType();
+        item.setImageContentType(
+                (contentType == null || contentType.isBlank())
+                        ? DEFAULT_IMAGE_MEDIA_TYPE.toString()
+                        : contentType
+        );
         itemRepository.save(item);
 
         return ResponseEntity.ok().build();
@@ -163,8 +170,20 @@ public class ItemController {
         }
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(item.getImageContentType()))
+                .contentType(resolveImageMediaType(item.getImageContentType()))
                 .body(item.getImageData());
+    }
+
+    private MediaType resolveImageMediaType(String contentType) {
+        if (contentType == null || contentType.isBlank()) {
+            return DEFAULT_IMAGE_MEDIA_TYPE;
+        }
+
+        try {
+            return MediaType.parseMediaType(contentType);
+        } catch (IllegalArgumentException ignored) {
+            return DEFAULT_IMAGE_MEDIA_TYPE;
+        }
     }
 
 }

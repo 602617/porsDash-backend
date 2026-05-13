@@ -1,6 +1,7 @@
 package com.martin.demo.service;
 
 import com.martin.demo.auth.AppUser;
+import com.martin.demo.dto.ActiveBookingRequestDto;
 import com.martin.demo.model.Booking;
 import com.martin.demo.model.BookingStatus;
 import com.martin.demo.model.Items;
@@ -40,6 +41,23 @@ public class BookingService {
 
     public List<Booking> findBookingsForUser(String username) {
         return repo.findByUserUsernameOrderByStartTimeDesc(username);
+    }
+
+    public List<ActiveBookingRequestDto> findActiveRequestsForOwner(String username) {
+        return repo.findActiveRequestsForOwner(username, LocalDateTime.now())
+                .stream()
+                .map(b -> new ActiveBookingRequestDto(
+                        b.getId(),
+                        b.getItem().getId(),
+                        b.getItem().getName(),
+                        b.getUser().getId(),
+                        b.getUser().getUsername(),
+                        b.getStartTime(),
+                        b.getEndTime(),
+                        b.getStatus(),
+                        b.getUpdatedAt()
+                ))
+                .toList();
     }
 
     public List<Booking> findBookingsForItem(Long itemID) {
