@@ -3,6 +3,7 @@ package com.martin.demo.service;
 import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.TimeEntryDto;
 import com.martin.demo.dto.TimeEntrySummaryDto;
+import com.martin.demo.dto.UpdateTimeEntryDto;
 import com.martin.demo.model.TimeEntry;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.TimeEntryRepository;
@@ -90,6 +91,34 @@ public class TimeEntryService {
                 .sum();
 
         return new TimeEntrySummaryDto(totalMinutes, overtimeMinutes, period.size());
+    }
+
+    @Transactional
+    public TimeEntryDto updateEntry(Long id, UpdateTimeEntryDto dto, String username) {
+        TimeEntry entry = entries.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Registrering ikke funnet"));
+
+        if (!entry.getUser().getUsername().equals(username)) {
+            throw new AccessDeniedException("Ikke tilgang");
+        }
+
+        if (dto.startTime() != null) {
+            entry.setStartTime(dto.startTime());
+        }
+        if (dto.endTime() != null) {
+            entry.setEndTime(dto.endTime());
+        }
+        if (dto.note() != null) {
+            entry.setNote(dto.note());
+        }
+
+        if (entry.getStartTime() != null && entry.getEndTime() != null) {
+            long minutes = Duration.between(entry.getStartTime(), entry.getEndTime()).toMinutes();
+            entry.setTotalMinutes(minutes);
+            entry.setOvertimeMinutes(Math.max(0, minutes - NORMAL_WORK_MINUTES));
+        }
+
+        return TimeEntryDto.from(entries.save(entry));
     }
 
     @Transactional

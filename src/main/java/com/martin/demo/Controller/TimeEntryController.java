@@ -2,6 +2,7 @@ package com.martin.demo.Controller;
 
 import com.martin.demo.dto.TimeEntryDto;
 import com.martin.demo.dto.TimeEntrySummaryDto;
+import com.martin.demo.dto.UpdateTimeEntryDto;
 import com.martin.demo.service.TimeEntryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -47,6 +48,14 @@ public class TimeEntryController {
             @RequestParam Instant to,
             Authentication auth) {
         return service.getSummary(auth.getName(), from, to);
+    }
+
+    @PutMapping("/{id}")
+    public TimeEntryDto update(
+            @PathVariable Long id,
+            @RequestBody UpdateTimeEntryDto dto,
+            Authentication auth) {
+        return service.updateEntry(id, dto, auth.getName());
     }
 
     @DeleteMapping("/{id}")
