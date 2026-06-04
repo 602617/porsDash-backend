@@ -3,13 +3,16 @@ package com.martin.demo.Controller;
 import com.martin.demo.dto.TimeEntryDto;
 import com.martin.demo.dto.TimeEntrySummaryDto;
 import com.martin.demo.dto.UpdateTimeEntryDto;
+import com.martin.demo.dto.WeeklySummaryDto;
 import com.martin.demo.service.TimeEntryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/time-entries")
@@ -22,8 +25,9 @@ public class TimeEntryController {
     }
 
     @PostMapping("/start")
-    public TimeEntryDto start(Authentication auth) {
-        return service.startWork(auth.getName());
+    public TimeEntryDto start(@RequestBody(required = false) Map<String, String> body, Authentication auth) {
+        String note = body != null ? body.get("note") : null;
+        return service.startWork(auth.getName(), note);
     }
 
     @PostMapping("/stop")
@@ -48,6 +52,14 @@ public class TimeEntryController {
             @RequestParam Instant to,
             Authentication auth) {
         return service.getSummary(auth.getName(), from, to);
+    }
+
+    @GetMapping("/summary/weekly")
+    public WeeklySummaryDto weeklySummary(
+            @RequestParam(required = false) LocalDate date,
+            Authentication auth) {
+        LocalDate targetDate = date != null ? date : LocalDate.now();
+        return service.getWeeklySummary(auth.getName(), targetDate);
     }
 
     @PutMapping("/{id}")

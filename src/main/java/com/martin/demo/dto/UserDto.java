@@ -6,11 +6,20 @@ import org.springframework.security.core.userdetails.User;
 public class UserDto {
     private Long id;
     private String username;
+    private String role;
+    private java.util.List<String> applicationRoles;
 
     public UserDto() {}
     public UserDto(Long id, String username) {
         this.id = id;
         this.username = username;
+    }
+
+    public UserDto(Long id, String username, String role, java.util.List<String> applicationRoles) {
+        this.id = id;
+        this.username = username;
+        this.role = role;
+        this.applicationRoles = applicationRoles;
     }
 
     public Long getId() {
@@ -27,5 +36,21 @@ public class UserDto {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public java.util.List<String> getApplicationRoles() {
+        return applicationRoles;
+    }
+
+    public void setApplicationRoles(java.util.List<String> applicationRoles) {
+        this.applicationRoles = applicationRoles;
     }
 }

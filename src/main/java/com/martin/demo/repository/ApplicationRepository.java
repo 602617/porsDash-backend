@@ -36,4 +36,13 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
         ORDER BY a.updatedAt DESC
     """)
     List<Application> findPendingForReceivers();
+
+    @Query("""
+        SELECT a FROM Application a
+        WHERE a.active = true
+        AND a.status IN (com.martin.demo.model.ApplicationStatus.ACCEPTED, com.martin.demo.model.ApplicationStatus.DECLINED)
+        AND (a.sender.username = :username OR a.respondedBy.username = :username)
+        ORDER BY a.updatedAt DESC
+    """)
+    List<Application> findClosedForUser(String username);
 }

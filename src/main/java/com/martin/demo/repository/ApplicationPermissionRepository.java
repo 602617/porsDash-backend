@@ -11,4 +11,6 @@ public interface ApplicationPermissionRepository extends JpaRepository<Applicati
     List<ApplicationPermission> findByRole(ApplicationPermissionRole role);
 
     boolean existsByUserIdAndRole(Long userId, ApplicationPermissionRole role);
+
+    List<ApplicationPermission> findByUserId(Long userId);
 }

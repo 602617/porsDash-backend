@@ -260,6 +260,20 @@ public class ApplicationService {
         }
     }
 
+    public List<ApplicationListDto> listHistory(String username) {
+        me(username); // verify user exists
+        return applications.findClosedForUser(username).stream()
+                .map(ApplicationListDto::from)
+                .toList();
+    }
+
+    public List<String> getMyRoles(String username) {
+        AppUser user = me(username);
+        return permissions.findByUserId(user.getId()).stream()
+                .map(p -> p.getRole().name())
+                .toList();
+    }
+
     public void archive(Long id, String username) {
         Application app = applications.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new EntityNotFoundException("Søknad ikke funnet"));

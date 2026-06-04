@@ -32,6 +32,16 @@ public class ApplicationController {
         return service.listApplications(auth.getName());
     }
 
+    @GetMapping("/history")
+    public List<ApplicationListDto> history(Authentication auth) {
+        return service.listHistory(auth.getName());
+    }
+
+    @GetMapping("/my-role")
+    public List<String> myRole(Authentication auth) {
+        return service.getMyRoles(auth.getName());
+    }
+
     @GetMapping("/{id}")
     public ApplicationDetailDto get(@PathVariable Long id, Authentication auth) {
         return service.getApplication(id, auth.getName());

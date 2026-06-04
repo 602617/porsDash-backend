@@ -3,6 +3,7 @@ package com.martin.demo.service;
 import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.UserDto;
 import com.martin.demo.repository.AppUserRepository;
+import com.martin.demo.repository.ApplicationPermissionRepository;
 import com.martin.demo.service.FriendshipService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,11 +15,15 @@ import java.util.Set;
 public class UserService {
     @Autowired private AppUserRepository userRepo;
     @Autowired private FriendshipService friendshipService;
+    @Autowired private ApplicationPermissionRepository permissionRepo;
 
     public UserDto findByUsername(String username) {
         AppUser user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return new UserDto(user.getId(), user.getUsername());
+        List<String> appRoles = permissionRepo.findByUserId(user.getId()).stream()
+                .map(p -> p.getRole().name())
+                .toList();
+        return new UserDto(user.getId(), user.getUsername(), user.getRole(), appRoles);
     }
 
     public List<UserDto> listAll(String username) {
