@@ -4,10 +4,12 @@ import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.CreateItemRequest;
 import com.martin.demo.dto.ItemDto;
 import com.martin.demo.model.Items;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.ItemRepository;
 import com.martin.demo.service.FriendshipService;
 import com.martin.demo.service.ItemService;
+import com.martin.demo.service.ScoreService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,13 +34,16 @@ public class ItemController {
     private final AppUserRepository appUserRepository;
     private final ItemService itemService;
     private final FriendshipService friendshipService;
+    private final ScoreService scoreService;
 
     public ItemController(ItemRepository itemRepository, AppUserRepository appUserRepository,
-                          ItemService itemService, FriendshipService friendshipService) {
+                          ItemService itemService, FriendshipService friendshipService,
+                          ScoreService scoreService) {
         this.itemRepository = itemRepository;
         this.appUserRepository = appUserRepository;
         this.itemService = itemService;
         this.friendshipService = friendshipService;
+        this.scoreService = scoreService;
     }
 
     @GetMapping
@@ -73,6 +78,8 @@ public class ItemController {
         item.setUser(user);
 
         itemRepository.save(item);
+
+        scoreService.award(username, ScoringAction.CREATE_ITEM);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Item created");
     }
@@ -152,6 +159,8 @@ public class ItemController {
                         : contentType
         );
         itemRepository.save(item);
+
+        scoreService.award(principal.getName(), ScoringAction.UPLOAD_ITEM_IMAGE);
 
         return ResponseEntity.ok().build();
     }

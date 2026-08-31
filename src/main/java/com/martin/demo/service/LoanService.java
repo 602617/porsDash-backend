@@ -9,6 +9,7 @@ import com.martin.demo.dto.LoanSummaryDto;
 import com.martin.demo.dto.UpdatePaymentDto;
 import com.martin.demo.model.Loan;
 import com.martin.demo.model.LoanPayment;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.LoanPaymentRepository;
@@ -30,15 +31,17 @@ public class LoanService {
     private final AppUserRepository users;
     private final NotificationService notificationService;
     private final FriendshipService friendshipService;
+    private final ScoreService scoreService;
 
     public LoanService(LoanRepository loans, LoanPaymentRepository payments,
                        AppUserRepository users, NotificationService notificationService,
-                       FriendshipService friendshipService) {
+                       FriendshipService friendshipService, ScoreService scoreService) {
         this.loans = loans;
         this.payments = payments;
         this.users = users;
         this.notificationService = notificationService;
         this.friendshipService = friendshipService;
+        this.scoreService = scoreService;
     }
 
     private void assertAccess(Loan loan, String username) {
@@ -119,6 +122,8 @@ public class LoanService {
 
         LoanPayment saved = payments.save(p);
 
+        scoreService.award(username, ScoringAction.ADD_LOAN_PAYMENT);
+
         String loanName = loan.getTitle() != null ? loan.getTitle() : "lån";
         notifyOtherParty(loan, me,
                 me.getUsername() + " la til en betaling på " + dto.amount() + " kr (" + loanName + ")");
@@ -191,6 +196,8 @@ public class LoanService {
         }
 
         Loan saved = loans.save(loan);
+
+        scoreService.award(username, ScoringAction.CREATE_LOAN);
 
         String loanName = saved.getTitle() != null ? saved.getTitle() : "lån";
         notificationService.notifyUser(other.getId(),

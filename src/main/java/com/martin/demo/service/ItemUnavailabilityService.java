@@ -2,6 +2,7 @@ package com.martin.demo.service;
 
 import com.martin.demo.model.ItemUnavailability;
 import com.martin.demo.model.Items;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.repository.ItemRepository;
 import com.martin.demo.repository.ItemUnavailabilityRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,11 +16,14 @@ import java.util.List;
 public class ItemUnavailabilityService {
     private final ItemRepository itemsRepo;
     private final ItemUnavailabilityRepository unavailRepo;
+    private final ScoreService scoreService;
 
     public ItemUnavailabilityService(ItemRepository itemsRepo,
-                                     ItemUnavailabilityRepository unavailRepo) {
+                                     ItemUnavailabilityRepository unavailRepo,
+                                     ScoreService scoreService) {
         this.itemsRepo   = itemsRepo;
         this.unavailRepo = unavailRepo;
+        this.scoreService = scoreService;
     }
 
     public ItemUnavailability blockPeriod(Long itemId,
@@ -42,7 +46,9 @@ public class ItemUnavailabilityService {
         blk.setItem(item);
         blk.setStartTime(start);
         blk.setEndTime(end);
-        return unavailRepo.save(blk);
+        ItemUnavailability saved = unavailRepo.save(blk);
+        scoreService.award(username, ScoringAction.CREATE_UNAVAILABILITY);
+        return saved;
     }
 
     public List<ItemUnavailability> listBlocks(Long itemId) {

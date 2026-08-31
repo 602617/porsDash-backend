@@ -6,6 +6,7 @@ import com.martin.demo.dto.EventDetailDto;
 import com.martin.demo.model.AttendanceStatus;
 import com.martin.demo.model.Event;
 import com.martin.demo.model.EventAttendance;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.dto.EventDto;
 import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.AppUserRepository;
@@ -29,17 +30,20 @@ public class EventService {
     private final AppUserRepository userRepo;
     private final NotificationService notificationService;
     private final FriendshipService friendshipService;
+    private final ScoreService scoreService;
 
     public EventService(EventRepository eventRepo,
                         EventAttendanceRepository attendanceRepo,
                         AppUserRepository userRepo,
                         NotificationService notificationService,
-                        FriendshipService friendshipService) {
+                        FriendshipService friendshipService,
+                        ScoreService scoreService) {
         this.eventRepo = eventRepo;
         this.attendanceRepo = attendanceRepo;
         this.userRepo = userRepo;
         this.notificationService = notificationService;
         this.friendshipService = friendshipService;
+        this.scoreService = scoreService;
     }
 
     public Event createEvent(EventDto dto, String username) {
@@ -54,6 +58,8 @@ public class EventService {
         ev.setEndTime(dto.getEndTime());
         ev.setCreatedBy(creator);
         Event saved = eventRepo.save(ev);
+
+        scoreService.award(username, ScoringAction.CREATE_EVENT);
 
         if (dto.getInvitedUserIds() != null) {
             Set<Long> friendIds = friendshipService.getFriendAndSelfIds(username);
@@ -191,6 +197,8 @@ public class EventService {
         att.setComment(req.getComment());
         att.setUpdatedAt(LocalDateTime.now());
         EventAttendance saved = attendanceRepo.save(att);
+
+        scoreService.award(username, ScoringAction.RSVP_EVENT);
 
         AppUser owner = ev.getCreatedBy();
         boolean isOwnerResponding = owner.getId().equals(user.getId());

@@ -39,8 +39,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     @Query("""
         SELECT a FROM Application a
-        WHERE a.active = true
-        AND a.status IN (com.martin.demo.model.ApplicationStatus.ACCEPTED, com.martin.demo.model.ApplicationStatus.DECLINED)
+        WHERE a.status IN (com.martin.demo.model.ApplicationStatus.ACCEPTED, com.martin.demo.model.ApplicationStatus.DECLINED)
         AND (a.sender.username = :username OR a.respondedBy.username = :username)
         ORDER BY a.updatedAt DESC
     """)

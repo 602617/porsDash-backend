@@ -3,6 +3,7 @@ package com.martin.demo.service;
 import com.martin.demo.auth.AppUser;
 import com.martin.demo.model.ItemAvailability;
 import com.martin.demo.model.Items;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.repository.ItemAvailabilityRepository;
 import com.martin.demo.repository.ItemRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,11 +17,14 @@ import java.util.List;
 public class ItemAvailabilityService {
     private final ItemRepository repoItem;
     private final ItemAvailabilityRepository repoAvail;
+    private final ScoreService scoreService;
 
     public ItemAvailabilityService(ItemRepository repoItem,
-                                   ItemAvailabilityRepository repoAvail) {
+                                   ItemAvailabilityRepository repoAvail,
+                                   ScoreService scoreService) {
         this.repoItem  = repoItem;
         this.repoAvail = repoAvail;
+        this.scoreService = scoreService;
     }
 
     public ItemAvailability createSlot(Long itemId, LocalDateTime start, LocalDateTime end, String ownerUsername) {
@@ -43,7 +47,9 @@ public class ItemAvailabilityService {
         slot.setItem(item);
         slot.setStartTime(start);
         slot.setEndTime(end);
-        return repoAvail.save(slot);
+        ItemAvailability saved = repoAvail.save(slot);
+        scoreService.award(ownerUsername, ScoringAction.CREATE_AVAILABILITY);
+        return saved;
     }
 
 

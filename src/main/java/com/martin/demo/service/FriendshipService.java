@@ -4,6 +4,7 @@ import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.FriendshipDto;
 import com.martin.demo.model.Friendship;
 import com.martin.demo.model.FriendshipStatus;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.FriendshipRepository;
@@ -23,13 +24,16 @@ public class FriendshipService {
     private final FriendshipRepository friendships;
     private final AppUserRepository users;
     private final NotificationService notificationService;
+    private final ScoreService scoreService;
 
     public FriendshipService(FriendshipRepository friendships,
                              AppUserRepository users,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             ScoreService scoreService) {
         this.friendships = friendships;
         this.users = users;
         this.notificationService = notificationService;
+        this.scoreService = scoreService;
     }
 
     private AppUser me(String username) {
@@ -78,6 +82,8 @@ public class FriendshipService {
         f.setStatus(FriendshipStatus.PENDING);
         Friendship saved = friendships.save(f);
 
+        scoreService.award(username, ScoringAction.SEND_FRIEND_REQUEST);
+
         notificationService.notifyUser(friend.getId(),
                 me.getUsername() + " sendte deg en venneforespørsel",
                 "/friends");
@@ -99,6 +105,8 @@ public class FriendshipService {
 
         f.setStatus(FriendshipStatus.ACCEPTED);
         Friendship saved = friendships.save(f);
+
+        scoreService.award(username, ScoringAction.ACCEPT_FRIEND_REQUEST);
 
         notificationService.notifyUser(f.getRequester().getId(),
                 me.getUsername() + " godtok venneforespørselen din",

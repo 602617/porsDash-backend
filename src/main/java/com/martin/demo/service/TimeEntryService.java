@@ -5,6 +5,7 @@ import com.martin.demo.dto.TimeEntryDto;
 import com.martin.demo.dto.TimeEntrySummaryDto;
 import com.martin.demo.dto.UpdateTimeEntryDto;
 import com.martin.demo.dto.WeeklySummaryDto;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.model.TimeEntry;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.TimeEntryRepository;
@@ -26,10 +27,13 @@ public class TimeEntryService {
 
     private final TimeEntryRepository entries;
     private final AppUserRepository users;
+    private final ScoreService scoreService;
 
-    public TimeEntryService(TimeEntryRepository entries, AppUserRepository users) {
+    public TimeEntryService(TimeEntryRepository entries, AppUserRepository users,
+                            ScoreService scoreService) {
         this.entries = entries;
         this.users = users;
+        this.scoreService = scoreService;
     }
 
     private AppUser me(String username) {
@@ -53,7 +57,9 @@ public class TimeEntryService {
             entry.setNote(note);
         }
 
-        return TimeEntryDto.from(entries.save(entry));
+        TimeEntryDto result = TimeEntryDto.from(entries.save(entry));
+        scoreService.award(username, ScoringAction.START_WORK);
+        return result;
     }
 
     @Transactional
@@ -68,7 +74,9 @@ public class TimeEntryService {
         entry.setTotalMinutes(minutes);
         entry.setOvertimeMinutes(Math.max(0, minutes - NORMAL_WORK_MINUTES));
 
-        return TimeEntryDto.from(entries.save(entry));
+        TimeEntryDto result = TimeEntryDto.from(entries.save(entry));
+        scoreService.award(username, ScoringAction.STOP_WORK);
+        return result;
     }
 
     public TimeEntryDto getActive(String username) {

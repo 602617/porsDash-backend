@@ -3,6 +3,7 @@ package com.martin.demo.service;
 import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.*;
 import com.martin.demo.model.*;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.ApplicationOfferRepository;
 import com.martin.demo.repository.ApplicationPermissionRepository;
@@ -24,17 +25,20 @@ public class ApplicationService {
     private final ApplicationPermissionRepository permissions;
     private final AppUserRepository users;
     private final NotificationService notificationService;
+    private final ScoreService scoreService;
 
     public ApplicationService(ApplicationRepository applications,
                               ApplicationOfferRepository offers,
                               ApplicationPermissionRepository permissions,
                               AppUserRepository users,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              ScoreService scoreService) {
         this.applications = applications;
         this.offers = offers;
         this.permissions = permissions;
         this.users = users;
         this.notificationService = notificationService;
+        this.scoreService = scoreService;
     }
 
     private AppUser me(String username) {
@@ -114,6 +118,8 @@ public class ApplicationService {
 
         saved.getOffers().add(offer);
 
+        scoreService.award(username, ScoringAction.CREATE_APPLICATION);
+
         // Notify all receivers
         List<ApplicationPermission> receivers = permissions.findByRole(ApplicationPermissionRole.RECEIVER);
         String typeName = typeDisplayName(type);
@@ -153,6 +159,8 @@ public class ApplicationService {
         app.setStatus(ApplicationStatus.ACCEPTED);
         app.setUpdatedAt(Instant.now());
         applications.save(app);
+
+        scoreService.award(responder.getUsername(), ScoringAction.RESPOND_APPLICATION);
 
         ApplicationOffer currentOffer = app.getOffers().get(app.getOffers().size() - 1);
         String typeName = typeDisplayName(app.getType());
@@ -210,6 +218,8 @@ public class ApplicationService {
         app.setUpdatedAt(Instant.now());
         applications.save(app);
 
+        scoreService.award(responder.getUsername(), ScoringAction.RESPOND_APPLICATION);
+
         String typeName = typeDisplayName(app.getType());
 
         AppUser toNotify = getOtherParty(app, responder);
@@ -223,7 +233,7 @@ public class ApplicationService {
     }
 
     public ApplicationDetailDto getApplication(Long id, String username) {
-        Application app = applications.findByIdAndActiveTrue(id)
+        Application app = applications.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Søknad ikke funnet"));
 
         AppUser user = me(username);

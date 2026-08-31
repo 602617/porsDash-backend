@@ -5,6 +5,7 @@ import com.martin.demo.dto.ActiveBookingRequestDto;
 import com.martin.demo.model.Booking;
 import com.martin.demo.model.BookingStatus;
 import com.martin.demo.model.Items;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.pushnotifications.notifications.NotificationService;
 import com.martin.demo.repository.AppUserRepository;
 import com.martin.demo.repository.BookingRepository;
@@ -26,17 +27,20 @@ public class BookingService {
     private final AppUserRepository userRepo;
     private final ItemUnavailabilityRepository itemUnavailabilityRepository;
     private final NotificationService notificationService;
+    private final ScoreService scoreService;
 
     public BookingService(BookingRepository repo,
                           ItemRepository itemRepo,
                           AppUserRepository userRepo,
                           ItemUnavailabilityRepository itemUnavailabilityRepository,
-                          NotificationService notificationService) {
+                          NotificationService notificationService,
+                          ScoreService scoreService) {
         this.repo = repo;
         this.itemRepo = itemRepo;
         this.userRepo = userRepo;
         this.itemUnavailabilityRepository = itemUnavailabilityRepository;
         this.notificationService = notificationService;
+        this.scoreService = scoreService;
     }
 
     public List<Booking> findBookingsForUser(String username) {
@@ -89,6 +93,8 @@ public class BookingService {
         booking.setStatus(BookingStatus.PENDING);
 
         Booking savedBooking = repo.save(booking);
+
+        scoreService.award(usr.getUsername(), ScoringAction.CREATE_BOOKING);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM HH:mm");
         notificationService.notifyOwner(
@@ -155,6 +161,8 @@ public class BookingService {
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setUpdatedAt(LocalDateTime.now());
         Booking saved = repo.save(booking);
+
+        scoreService.award(username, ScoringAction.APPROVE_BOOKING);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM HH:mm");
         notificationService.notifyUser(

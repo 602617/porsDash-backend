@@ -2,6 +2,7 @@ package com.martin.demo.Controller;
 
 import com.martin.demo.auth.AppUser;
 import com.martin.demo.dto.*;
+import com.martin.demo.model.ScoringAction;
 import com.martin.demo.model.ShoppingList;
 import com.martin.demo.model.ShoppingListItem;
 import com.martin.demo.repository.AppUserRepository;
@@ -9,6 +10,7 @@ import com.martin.demo.repository.ShoppingListItemRepository;
 import com.martin.demo.repository.ShoppingListRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.martin.demo.service.ScoreService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +26,16 @@ public class ShoppingListController {
     private final ShoppingListRepository shoppingListRepository;
     private final ShoppingListItemRepository itemRepository;
     private final AppUserRepository appUserRepository;
+    private final ScoreService scoreService;
 
     public ShoppingListController(ShoppingListRepository shoppingListRepository,
                                   ShoppingListItemRepository itemRepository,
-                                  AppUserRepository appUserRepository) {
+                                  AppUserRepository appUserRepository,
+                                  ScoreService scoreService) {
         this.shoppingListRepository = shoppingListRepository;
         this.itemRepository = itemRepository;
         this.appUserRepository = appUserRepository;
+        this.scoreService = scoreService;
     }
 
     // -------------------------------------------------
@@ -61,6 +66,8 @@ public class ShoppingListController {
         list.setOwner(user);
 
         shoppingListRepository.save(list);
+
+        scoreService.award(principal.getName(), ScoringAction.CREATE_SHOPPING_LIST);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Shopping list created");
     }
@@ -135,6 +142,8 @@ public class ShoppingListController {
 
         itemRepository.save(item);
 
+        scoreService.award(principal.getName(), ScoringAction.ADD_SHOPPING_LIST_ITEM);
+
         return ResponseEntity.status(HttpStatus.CREATED).body("Item added");
     }
 
@@ -160,6 +169,8 @@ public class ShoppingListController {
         item.setBoughtAt(item.isBought() ? Instant.now() : null);
 
         itemRepository.save(item);
+
+        scoreService.award(principal.getName(), ScoringAction.TOGGLE_ITEM_BOUGHT);
 
         return ResponseEntity.ok("Item updated");
     }
